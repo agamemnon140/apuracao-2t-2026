@@ -359,3 +359,41 @@ Três leituras:
    estado erra 6,66. Incerteza tem que ser por corrida, nunca uma faixa nacional.
 3. **O ganho de precisão é rápido e depois quase para.** De 0,5% para 3% o erro mediano cai pela
    metade; de 3% para 30% cai só de 1,23 para 0,94. O grosso da informação chega cedo.
+
+---
+
+# Efeito de município — a correlação local paga (19/08/2026)
+
+O modelo estadual v1 ignorava município: só a posição da seção no eixo esquerda-direita. Isso
+é cego para o caso clássico — Manaus é metade do eleitorado do Amazonas e apura tarde, então o
+interior chegava primeiro e nada avisava que a capital votaria diferente do que o eixo previa.
+
+O v2 acrescenta o **desvio local**: o quanto cada candidato foge, naquele município, do que o
+eixo previa — medido nas seções já apuradas dali e encolhido por `K_MUN = 300` votos.
+
+| apurado | dupla certa (v1 → v2) | erro mediano do líder | pior erro |
+|---|---|---|---|
+| 5% | 96% → 96% | 1,37 → **0,97** | 6,66 → **3,54** |
+| 10% | 93% → **100%** | 1,83 → **0,92** | 3,78 → **2,95** |
+| 20% | 96% → **100%** | 1,41 → **0,51** | 3,32 → **2,76** |
+| 50% | 96% → **100%** | 0,61 → **0,29** | 2,06 → **1,52** |
+
+A dupla que vai ao 2º turno passa a fechar em **100% das 27 corridas a partir de 10% apurado**,
+e fica. O Amazonas resolve aos 10% (era 50%).
+
+Calibração de `K_MUN` (300, 1.000, 3.000): pouco sensível — 300 ganha no pior caso em todos os
+marcos e nunca perde feio. Baixa sensibilidade é bom sinal contra ajuste ao acaso.
+
+**O custo, declarado:** abaixo de 3% apurado a mediana piora (3,06 → 3,35 pontos), porque com
+duas seções de um município o desvio local ainda é ruído. Trocamos mediana por cauda de
+propósito — num needle o desastre importa mais que o caso típico, e o pior erro melhora
+inclusive aos 0,5% (13,54 → 11,94).
+
+## O caso que ainda dói: Rondônia
+
+Margem real entre 1º e 2º: **1,84 ponto** (38,9% x 37,0%). O modelo erra essa margem em **13,5
+pontos aos 5%** e 11,4 aos 10% — mostraria uma dianteira folgada numa corrida decidida no fio.
+É o retrato do que a incerteza precisa cobrir: acertar o líder não basta se a margem projetada
+for confiante e errada.
+
+Ranking dos piores até 5% apurado (erro do líder): ES 11,94 · RR 11,86 · CE 8,49 · AM 7,96 · RJ 5,96.
