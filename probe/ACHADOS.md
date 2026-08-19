@@ -630,3 +630,44 @@ A dispersão do erro da margem (a "barra" do needle) por estágio: GOV 6,1 ponto
 → 3,4 aos 10% → 0,9 aos 50%; SEN 8,8 → 3,8 → 1,0. Em 2022 o Senado teve 1 vaga/estado; 2026
 terá 2 (formato de 2018), então essa dispersão precisa ser re-medida em 2018 antes de valer
 para 2026.
+
+---
+
+# Deputado federal: quociente, sobras e as 513 cadeiras congeladas (19/08/2026)
+
+## Alocador validado — e as divergências são a lição
+
+`pipeline/quociente.py` implementa as regras vigentes (QE com arredondamento do art. 106, piso
+de 10% do QE nas vagas de quociente, sobras com 80%/20% da EC 111, reabertura sem pisos,
+federações de 2022 como agremiação única). Aplicado aos totais finais: **498/513 contra a
+lista oficial de eleitos** — e os 15 que divergem contam três histórias:
+
+- **RJ e SE**: Gabriel Monteiro e André Moura, eleitos na urna e cassados depois. O oficial
+  lista 45/7 eleitos nesses estados; na noite, elegê-los É o resultado certo.
+- **AP (4 trocas)**: o caso judicial do Amapá, votações anuladas sub judice.
+- **9 estados com 1 troca**: a última cadeira de sobra, sensível a minúcia de divisor.
+
+Por isso a simulação compara contra o próprio alocador nos totais finais — isola erro de
+projeção de erro de mecânica.
+
+## A noite congelada — 513 cadeiras por estágio
+
+Share de agremiação projetado pelo modelo estadual (agremiação como "candidato"); ordem
+nominal dentro da agremiação vinda do próprio apurado; fração de legenda por agremiação
+medida no apurado; quociente + sobras a cada estágio.
+
+| apurado | nomes certos | bancada partidária (cadeiras fora) |
+|---|---|---|
+| 1% | 377/513 (73,5%) | 57 |
+| 3% | 400/513 (78,0%) | 44 |
+| 5% | 414/513 (80,7%) | 39 |
+| 10% | 427/513 (83,2%) | 28 |
+| 20% | 441/513 (86,0%) | 21 |
+| 50% | 467/513 (91,0%) | 12 |
+
+Leituras: (a) **bancada converge mais rápido que nome** — aos 10% o share partidário está
+quase resolvido (28 cadeiras fora de 513, ~5%), mas o nome da última cadeira de cada partido
+depende de ordem nominal fina e do degrau do quociente; (b) mesmo aos 50% ainda há 46 nomes
+trocados — a maioria disputas de última cadeira dentro do próprio partido, o tipo de coisa que
+o needle do P2 deve expressar como P(eleito) intermediário, nunca como certeza; (c) aos 3%
+apurado já se sabe a **forma da Câmara** (bancadas com erro médio de ~1,6 cadeira por estado).
