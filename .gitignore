@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+# dados pesados moram em D:\Claude\eleicoes-dados, nunca no repo
+*.zip
+*.csv
+*.parquet
