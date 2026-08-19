@@ -533,3 +533,37 @@ Ressalvas, sem maquiagem: é **um ciclo e 27 corridas**; a curva explica só **u
 variância** do desvio que tenta corrigir; e ela deve entrar como **prior encolhido**, cedendo à
 observação assim que houver dado — nunca como verdade. Se uma capital mudar a logística de
 transmissão em 2026 (Salvador mudou entre 2018 e 2022), a curva erra exatamente ali.
+
+---
+
+# Mira da coleta de seção: heterogeneidade é o melhor critério — e o ganho é pequeno (19/08/2026)
+
+Hipótese do usuário: se a seção vale em algum lugar, é nas cidades heterogêneas. Testada contra
+dois critérios rivais (tamanho puro; dano esperado = H × ordem × eleitorado), com orçamentos de
+5 mil a 200 mil seções, sempre **em cima do município já corrigido pela curva histórica**.
+
+Erro mediano do líder (27 corridas de governador):
+
+| critério / orçamento | 3% | 5% | 10% | 20% |
+|---|---|---|---|---|
+| nenhuma seção (só correção histórica) | 1,22 | 1,27 | 0,99 | 0,50 |
+| **H, 5 mil seções** | 1,20 | **1,17** | 0,99 | 0,53 |
+| H, 200 mil | 1,16 | **0,99** | 0,89 | 0,46 |
+| crawl completo (454 mil) | 1,30 | 0,97 | 0,92 | 0,51 |
+
+Três leituras:
+
+1. **A hipótese está certa em termos relativos**: H é o único critério que funciona com orçamento
+   pequeno. As cidades heterogêneas são *pequenas* (as do topo têm mediana de 45 seções; H médio
+   0,298 contra 0,131 do país), então 5 mil seções compram 100+ cidades. Os critérios por tamanho
+   ou dano esperado nem cabem no orçamento — só São Paulo capital tem 26 mil seções, então com
+   5-25 mil de orçamento eles selecionam **zero** cidades.
+2. **Mas o ganho absoluto é pequeno**: 0,10 ponto aos 5% com 5 mil seções; com 200 mil chega a
+   0,28 e **empata com o crawl completo**. A correção histórica de custo zero já tinha capturado
+   o grosso do que a seção oferecia.
+3. **O crawl completo chega a ser pior que a mira** em alguns marcos (3%: 1,30 contra 1,16) —
+   seção de cidade homogênea só adiciona ruído de amostragem ao que o município já dizia.
+
+Conclusão operacional para a noite: **a camada de seção vira "top ~200 mil seções ranqueadas por
+H", não 472 mil** — metade do custo, ganho igual ou melhor. E se a camada cair inteira, a perda
+real é ~0,1-0,3 ponto de mediana sobre o feed municipal corrigido: a noite não depende dela.
