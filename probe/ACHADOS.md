@@ -479,16 +479,29 @@ Correlação com o viés: H **+0,494**, rho **+0,423**, produto **H×rho +0,625*
 **H gera ruído** (o primeiro quarto é uma amostra pequena de uma cidade partida) e **rho gera
 viés sistemático**. O estrago grande exige as duas.
 
-## A ordem se repete entre eleições
+## A ordem se repete? Só o resumo dela — e parcialmente
 
-| | correlação entre rho de 2018 e rho de 2022 |
-|---|---|
-| todos os municípios | +0,284 |
-| ponderado por eleitorado | +0,429 |
-| **200 maiores cidades** | **+0,529** |
+Duas perguntas diferentes, que a primeira versão desta nota confundiu.
 
-Fortaleza 0,301 → 0,231. Belém 0,314 → 0,343. Recife 0,168 → 0,218. Rio −0,170 → −0,084.
-É estrutural: as mesmas zonas transmitem primeiro. (Salvador é a exceção: 0,028 → 0,233.)
+**As mesmas seções chegam cedo nos dois anos?** Pouco. Correlação de postos (Spearman) entre a
+ordem de chegada de 2018 e a de 2022, por município (3.293 cidades com 20+ seções casadas):
+mediana **+0,277**, 1º quartil +0,027, 3º quartil +0,495. **15% dos municípios têm ordem
+praticamente aleatória** entre os anos e o decil inferior é negativo (abaixo de −0,236) —
+cidades que inverteram. Nas 200 maiores, a mediana é +0,289: não é melhor.
+
+**O resumo político da ordem se repete?** Melhor. O desvio do eixo nos primeiros 10% a chegar,
+de 2018 para 2022: **+0,330** em todos, **+0,401** ponderado por eleitorado, **+0,503** nas 200
+maiores cidades. (Magnitude típica do desvio: 0,060 na mediana, 0,183 no p90.)
+
+O resumo sobrevive melhor que a sequência porque é mais grosso — a estrutura de quais regiões e
+zonas transmitem cedo persiste mesmo quando a sequência exata embaralha. Mas **+0,50 significa
+um quarto da variância explicada**: a curva de chegada é um **prior fraco**, não uma previsão da
+ordem. É por isso que ela recupera quase todo o ganho da seção a partir de 10% apurado, mas só
+parte dele aos 5% — ali ela é quase tudo o que existe, e um quarto de variância não basta.
+
+Por município, a persistência do rho (medida mais grosseira) dá +0,284 geral, +0,429 ponderado e
++0,529 nas 200 maiores: Fortaleza 0,301 → 0,231, Belém 0,314 → 0,343, Recife 0,168 → 0,218,
+Rio −0,170 → −0,084. Salvador é a exceção que ilustra o risco: 0,028 → 0,233.
 
 ## Consequência: a curva de chegada substitui o crawl de seção
 
@@ -516,5 +529,7 @@ ali poucos municípios têm fração apurada suficiente para a curva dizer algo.
 peça mais frágil do plano — pode ser trocado por uma tabela calculada offline a partir de 2022,
 com perda restrita à primeira meia hora e nenhuma mudança de chamada qualitativa.
 
-Ressalva: um ciclo, 27 corridas. E metade da ordem **não** se repete — a correção captura a
-parte estrutural (mesmas zonas, mesma logística), não a idiossincrasia daquela noite.
+Ressalvas, sem maquiagem: é **um ciclo e 27 corridas**; a curva explica só **um quarto da
+variância** do desvio que tenta corrigir; e ela deve entrar como **prior encolhido**, cedendo à
+observação assim que houver dado — nunca como verdade. Se uma capital mudar a logística de
+transmissão em 2026 (Salvador mudou entre 2018 e 2022), a curva erra exatamente ali.
