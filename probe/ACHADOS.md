@@ -300,3 +300,62 @@ perdedor por quase três horas.
   grandes contra +0,067 nas pequenas), e ajuda nos primeiros 20 minutos — mas piora de 2%
   apurado em diante (+0,68 contra +0,37 de erro na metade da apuração). Fica implementado e
   desligado; reavaliar quando houver mais noites para testar.
+
+---
+
+# Armadilha — eleição suplementar dentro do conjunto de 2022
+
+O conjunto `2022` dos dados abertos **não contém só a eleição de 2022**. Em Roraima, o cargo de
+governador aparece duas vezes:
+
+```
+  7.378 linhas  CD_ELEICAO 546   "Eleições Gerais Estaduais 2022"        02/10/2022
+  6.906 linhas  CD_ELEICAO 6278  "Eleição Suplementar Governador 2026"   21/06/2026
+```
+
+O governo de RR foi anulado e re-disputado em junho de 2026, e a re-disputa foi arquivada no
+conjunto do ano original. Sem filtro, o estado entra no modelo com **duas eleições sobrepostas**
+— e o sintoma que denunciou foi discreto: a "última totalização" do 1º turno de 2022 aparecia
+como 21/06/2026.
+
+Correção aplicada em `baseline_estadual.py`, `carimbos.py` e `baseline_presidente.py`: filtrar
+por `DT_ELEICAO` do ano. Vale para 2026 também — quando houver suplementar de 2028 re-rodando
+uma disputa de 2026, ela cairá no mesmo lugar.
+
+Códigos de eleição de 2022, para referência: **544** presidente 1º turno, **545** presidente
+2º turno, **546** cargos estaduais 1º turno.
+
+---
+
+# Modelo estadual — 27 testes independentes (19/08/2026)
+
+O presidente dá uma noite; as 27 corridas de governador da **mesma noite** dão 27 testes
+independentes — e é delas que sai material para calibrar a probabilidade do needle.
+
+Aqui o candidato **não tem histórico próprio** (o governador de 2022 não estava na cédula de
+2018). O que sobrevive entre ciclos é a geografia: `share_c(i) ≈ a_c + b_c · z_i`, onde `z_i` é
+a posição da seção no eixo do 2º turno presidencial anterior, e `a_c`/`b_c` nascem do zero e são
+estimados **só com as seções já apuradas** (`b_c` encolhido para 0 enquanto há pouca apuração,
+senão um punhado de seções de um reduto define a curva inteira do candidato).
+
+Das 27 corridas, 15 se decidiram no 1º turno e 12 foram a 2º turno.
+
+| apurado | líder certo | dupla certa | erro do líder (mediana / pior) |
+|---|---|---|---|
+| 0,5% | 96% | 93% | 3,06 / **13,54** |
+| 1% | **100%** | 96% | 1,89 / 8,36 |
+| 3% | 100% | 96% | 1,23 / 6,09 |
+| 10% | 100% | 93% | 1,83 / 3,78 |
+| 30% | 100% | 93% | 0,94 / 2,60 |
+| 90% | 100% | 100% | 0,20 / 0,72 |
+
+Três leituras:
+
+1. **O líder é fácil; o segundo lugar é o problema.** A partir de 1% apurado o modelo acerta o
+   primeiro colocado nas 27 corridas. Já a **dupla** que vai ao 2º turno só fecha em 100% com
+   90% apurado — no Amazonas ela só estabiliza com 50% apurado, no Rio Grande do Sul com 90%.
+   Como 12 das 27 corridas foram a 2º turno, é exatamente essa a pergunta que importa nelas.
+2. **A mediana engana.** Com 5% apurado a mediana do erro do líder é 1,37 ponto, mas o pior
+   estado erra 6,66. Incerteza tem que ser por corrida, nunca uma faixa nacional.
+3. **O ganho de precisão é rápido e depois quase para.** De 0,5% para 3% o erro mediano cai pela
+   metade; de 3% para 30% cai só de 1,23 para 0,94. O grosso da informação chega cedo.

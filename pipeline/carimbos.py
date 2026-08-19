@@ -32,6 +32,9 @@ def extrai(ano: int, cargo: str = "PRESIDENTE", turno: str = "1") -> Path:
             n += 1
             if r["DS_CARGO"].upper() != cargo or r["NR_TURNO"] != turno:
                 continue
+            # ver nota em baseline_estadual: suplementares posteriores vivem no mesmo conjunto
+            if not r["DT_ELEICAO"].endswith(str(ano)):
+                continue
             linhas.append((
                 r["SG_UF"], r["CD_MUNICIPIO"], int(r["NR_ZONA"]), int(r["NR_SECAO"]),
                 int(r["QT_APTOS"] or 0), int(r["QT_COMPARECIMENTO"] or 0),

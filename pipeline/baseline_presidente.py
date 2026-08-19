@@ -44,6 +44,8 @@ def compila(ano: int) -> Path:
             # 2018 grava "Presidente", 2022 grava "PRESIDENTE" -- comparar sem caixa
             if r["DS_CARGO"].upper() != "PRESIDENTE":
                 continue
+            if not r["DT_ELEICAO"].endswith(str(ano)):   # ver nota em baseline_estadual
+                continue
             chave = (r["SG_UF"], r["CD_MUNICIPIO"], int(r["NR_ZONA"]), int(r["NR_SECAO"]))
             linha = acc.get(chave)
             if linha is None:
