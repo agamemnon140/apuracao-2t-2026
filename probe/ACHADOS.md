@@ -567,3 +567,43 @@ Três leituras:
 Conclusão operacional para a noite: **a camada de seção vira "top ~200 mil seções ranqueadas por
 H", não 472 mil** — metade do custo, ganho igual ou melhor. E se a camada cair inteira, a perda
 real é ~0,1-0,3 ponto de mediana sobre o feed municipal corrigido: a noite não depende dela.
+
+---
+
+# Calibração do needle — primeira medida (19/08/2026)
+
+A probabilidade nasce como o plano exige: da distribuição de **erros reais** do modelo, nunca de
+uma logística chutada. Para cada corrida e estágio, os erros de margem vêm das outras 26
+corridas do mesmo cargo (leave-one-out) — a corrida nunca vê o próprio erro. 540 previsões
+(54 corridas × 10 estágios), aferidas contra quem de fato venceu.
+
+**Brier score: 0,0403** (chute de 50% = 0,25; oráculo = 0).
+
+| needle diz | lider vence | n |
+|---|---|---|
+| 60-70% | 68,4% | 19 |
+| 70-80% | 71,4% | 21 |
+| 80-90% | 100% | 20 |
+| 90-95% | 96,7% | 91 |
+| 95-99% | 98,4% | 374 |
+| **50-60%** | **25,0%** | **8** |
+| **<50%** | **0%** | **7** |
+
+Por estágio, previsto x observado casa bem (1% apurado: 86,7 x 85,2; 10%: 92,9 x 92,6; de 30%
+em diante: ~98 x 100). Controle com um estágio sorteado por corrida (elimina a correlação entre
+estágios): 93,6% previsto x 94,4% observado.
+
+## Leitura honesta
+
+1. **No miolo (60-99%), a calibração já nasce boa** — sem nenhum mapa isotônico por cima.
+   Emprestar a distribuição de erro das outras corridas do mesmo estágio funciona.
+2. **Na cauda de baixo (<60%), o needle está subconfiante ao contrário**: quando diz 50-60%,
+   o líder vence só 25% — ou seja, nesses casos o modelo deveria estar dizendo ~30%, não 55%.
+   São 15 previsões em 540, quase todas corridas apertadíssimas (RS 0,04 ponto; RO 1,8) nos
+   primeiros estágios. Amostra minúscula, mas o sinal é coerente: perto do empate, o erro da
+   margem NÃO é simétrico — o líder aparente de um parcial enviesado tende a estar
+   sobre-estimado. O mapa isotônico do plano existe exatamente para esta faixa.
+3. **O grosso das previsões (465/540) está acima de 90%** porque a maioria das corridas não é
+   apertada. O needle vai passar a noite dizendo 95-99% e estará certo — o valor de mercado
+   dele está nos poucos cards onde diz 60-80%, e é lá que a calibração precisa de mais amostra
+   (2018 ancorado em 2014 é o próximo conjunto de teste natural).
