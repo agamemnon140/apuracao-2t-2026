@@ -455,3 +455,66 @@ crawl inteiro, ou fica no município.
 
 Não existe arquivo por **zona** no feed (testado: 404 em todas as variantes de caminho), que
 seria o meio-termo elegante — São Paulo tem 58 zonas contra 26 mil seções.
+
+---
+
+# Heterogeneidade, ordem, e a tabela que substitui o crawl de seção (19/08/2026)
+
+## Duas grandezas que se confundem
+
+Medidas nos 4.957 municípios com 10+ seções, usando o presidente (uniforme no país):
+
+- **H** — heterogeneidade interna: desvio-padrão do eixo esquerda-direita **entre as seções da
+  mesma cidade**. Mediana 0,124; decil superior acima de 0,218.
+- **rho** — ordem: correlação entre a ordem de chegada das seções e o eixo delas.
+
+O viés real do primeiro quarto apurado, cruzando as duas (mediana em pontos de margem):
+
+| | ordem aleatória | → | ordem forte |
+|---|---|---|---|
+| **homogêneo** | 1,97 | | 3,25 |
+| **heterogêneo** | 4,18 | | **11,60** |
+
+Correlação com o viés: H **+0,494**, rho **+0,423**, produto **H×rho +0,625**. A leitura:
+**H gera ruído** (o primeiro quarto é uma amostra pequena de uma cidade partida) e **rho gera
+viés sistemático**. O estrago grande exige as duas.
+
+## A ordem se repete entre eleições
+
+| | correlação entre rho de 2018 e rho de 2022 |
+|---|---|
+| todos os municípios | +0,284 |
+| ponderado por eleitorado | +0,429 |
+| **200 maiores cidades** | **+0,529** |
+
+Fortaleza 0,301 → 0,231. Belém 0,314 → 0,343. Recife 0,168 → 0,218. Rio −0,170 → −0,084.
+É estrutural: as mesmas zonas transmitem primeiro. (Salvador é a exceção: 0,028 → 0,233.)
+
+## Consequência: a curva de chegada substitui o crawl de seção
+
+Se a ordem se repete, dá para aprender em 2018 a **curva de chegada** de cada município — o
+eixo político médio das seções que compõem os primeiros f% a apurar — e usar essa curva para
+corrigir o parcial municipal em 2022. O feed informa quanto cada município já apurou, então
+basta consultar a curva no ponto certo. Custo ao vivo: **zero** (é uma tabela pré-computada).
+
+Teste out-of-sample (curvas de 2018 → previsão de 2022), 27 corridas de governador:
+
+| apurado | município cru | município **corrigido** | seção (472 mil requisições) |
+|---|---|---|---|
+| 5% | 1,37 | 1,27 | **0,97** |
+| 10% | 1,41 | **0,99** | 0,92 |
+| 20% | 0,85 | **0,50** | 0,51 |
+| pior aos 5% | 4,77 | **3,57** | 3,54 |
+| pior aos 10% | 4,17 | **2,94** | 2,95 |
+| pior aos 20% | 3,66 | **2,55** | 2,76 |
+
+**A partir de 10% apurado o município corrigido empata ou supera a seção**, na mediana e no
+pior caso. Abaixo de 5% ele recupera o pior caso mas só parte da mediana (1,27 contra 0,97) —
+ali poucos municípios têm fração apurada suficiente para a curva dizer algo.
+
+**Isso derruba a justificativa da camada L3.** O crawl de 472 mil × 2 requisições por ciclo — a
+peça mais frágil do plano — pode ser trocado por uma tabela calculada offline a partir de 2022,
+com perda restrita à primeira meia hora e nenhuma mudança de chamada qualitativa.
+
+Ressalva: um ciclo, 27 corridas. E metade da ordem **não** se repete — a correção captura a
+parte estrutural (mesmas zonas, mesma logística), não a idiossincrasia daquela noite.
