@@ -607,3 +607,26 @@ estágios): 93,6% previsto x 94,4% observado.
    apertada. O needle vai passar a noite dizendo 95-99% e estará certo — o valor de mercado
    dele está nos poucos cards onde diz 60-80%, e é lá que a calibração precisa de mais amostra
    (2018 ancorado em 2014 é o próximo conjunto de teste natural).
+
+## Calibração aberta por cargo
+
+| | GOV (270 prev.) | SEN (270 prev.) |
+|---|---|---|
+| Brier | **0,0066** | **0,0739** |
+| faixa <60% | n=1 | previsto 49,7 → observado **7,1%** (n=14) |
+| faixa 60-70% | 100% (n=5) | 57,1% (n=14) |
+| faixa 80%+ | tudo ≥94% observado | calibrado (86→100, 93→94, 98→96) |
+
+**Toda a patologia da faixa baixa é do Senado.** No governador o needle quase não visita a zona
+de dúvida (a geografia esquerda-direita explica governador muito bem); no Senado, quando o
+needle diz ~50%, o líder projetado vence 7% das vezes — ou seja, naquela zona o modelo está
+sistematicamente do lado errado, não apenas incerto. Coerente com o diagnóstico anterior:
+senador tem voto pessoal que o eixo não explica, e o líder aparente do parcial enviesado é
+sobre-estimado. O conserto (mapa isotônico ou prior asimétrico perto do empate) deve ser
+ajustado POR CARGO, e o card de Senado abaixo de ~80% merece rótulo de "disputado" em vez de
+número.
+
+A dispersão do erro da margem (a "barra" do needle) por estágio: GOV 6,1 pontos com 1% apurado
+→ 3,4 aos 10% → 0,9 aos 50%; SEN 8,8 → 3,8 → 1,0. Em 2022 o Senado teve 1 vaga/estado; 2026
+terá 2 (formato de 2018), então essa dispersão precisa ser re-medida em 2018 antes de valer
+para 2026.
