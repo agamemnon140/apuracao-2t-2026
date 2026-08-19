@@ -397,3 +397,61 @@ pontos aos 5%** e 11,4 aos 10% — mostraria uma dianteira folgada numa corrida 
 for confiante e errada.
 
 Ranking dos piores até 5% apurado (erro do líder): ES 11,94 · RR 11,86 · CE 8,49 · AM 7,96 · RJ 5,96.
+
+---
+
+# Vale coletar seção ao vivo? (19/08/2026)
+
+Esta é a decisão mais cara do plano: a camada de seção custa ~472 mil × 2 requisições por ciclo;
+a municipal custa 27. Testado nas 27 corridas de governador, simulando um feed que só entrega o
+total parcial do município (sem dizer **quais** seções entraram — o melhor palpite para a âncora
+do que entrou passa a ser a média da cidade).
+
+O teste é justo: **95-96% do que já apurou está em município pela metade** em qualquer momento
+da noite. Municípios não totalizam de uma vez, então o feed municipal perde informação de verdade.
+
+| apurado | erro mediano do líder: município → seção | pior erro | dupla certa |
+|---|---|---|---|
+| 3% | 1,33 → 1,30 | 5,32 → 4,95 | igual |
+| 5% | 1,37 → **0,97** | 4,77 → **3,54** | igual |
+| 10% | 1,41 → **0,92** | 4,17 → **2,95** | igual |
+| 20% | 0,85 → 0,51 | 3,66 → 2,76 | igual |
+
+**A seção compra ~0,4 ponto na mediana e ~1,2 no pior caso, e não muda nenhuma chamada
+qualitativa**: a dupla que vai ao 2º turno é idêntica nos dois feeds, em todos os marcos.
+
+## O mecanismo: viés de ordem dentro da cidade
+
+A seção paga onde a ordem de chegada **dentro** do município é politicamente ordenada:
+
+| cidade | corr(ordem, eixo político) | eixo das 10% primeiras → 10% últimas |
+|---|---|---|
+| Salvador | +0,226 | +0,321 → +0,403 |
+| Fortaleza | +0,221 | +0,062 → +0,172 |
+| Manaus | +0,165 | −0,337 → −0,247 |
+| São Paulo | +0,115 | −0,219 → −0,117 |
+| Rio de Janeiro | −0,084 | sem viés |
+| Belo Horizonte / Porto Alegre | ~0,00 | sem viés |
+
+Por isso o Ceará é quem mais ganha com seção (+1,49 ponto aos 5%): Fortaleza apura de um lado
+político para o outro. Onde a chegada intramunicipal é politicamente aleatória (Rio, BH, POA),
+o total parcial do município já é quase não-enviesado.
+
+## O atalho que NÃO funciona
+
+A hipótese natural — coletar seção só nas cidades grandes — foi testada e falha:
+
+| coleta fina em | seções | % do eleitorado | erro mediano aos 5% |
+|---|---|---|---|
+| nenhuma cidade | 0 | 0% | 1,37 |
+| top 10 | 74.024 | 17,7% | 1,29 |
+| top 100 | 172.491 | 39,6% | 1,14 |
+| **todas** | **471.010** | 100% | **0,97** |
+
+As 100 maiores cidades custam 172 mil seções (37% do crawl) e capturam **menos de um terço** do
+ganho. O valor da seção está na **cauda longa** dos 5.500 municípios pequenos, não nas capitais
+— cada um contribui com um viés minúsculo, e são milhares. Não há meio-termo barato: ou paga o
+crawl inteiro, ou fica no município.
+
+Não existe arquivo por **zona** no feed (testado: 404 em todas as variantes de caminho), que
+seria o meio-termo elegante — São Paulo tem 58 zonas contra 26 mil seções.
