@@ -671,3 +671,22 @@ depende de ordem nominal fina e do degrau do quociente; (b) mesmo aos 50% ainda 
 trocados — a maioria disputas de última cadeira dentro do próprio partido, o tipo de coisa que
 o needle do P2 deve expressar como P(eleito) intermediário, nunca como certeza; (c) aos 3%
 apurado já se sabe a **forma da Câmara** (bancadas com erro médio de ~1,6 cadeira por estado).
+
+---
+
+# Lote de 19-20/08 (noite): needle completo, tela da noite v1 e o teste das municipais
+
+- **Municipais NÃO turbinam** (`probe/municipais_2020.py`, teste 2020→2022 = análogo de
+  2024→2026): covariável por candidato (share do partido no vereador) piora governador
+  (1,30→1,65 aos 3%) e não muda presidente. O eixo presidencial + efeito de município ao vivo
+  já contêm o sinal. Resultado negativo medido, encerrado.
+- **Bancada com IC**: o MC agora grava cadeiras por agremiação por sorteio; a soma no mesmo
+  índice de sorteio dá a bancada nacional com p10–p90. Aos 10% de 2022: PL 86–96 (real 99 no
+  limite), FE Brasil 79–87 (real 80), PP 44–51 (real 47), PSD 38–44 (real 42).
+- **Tela da noite v1** em `docs/index.html` + contrato `docs/dados/live.json` (documentado no
+  METODO.md): abas Presidente/Governos/Senado/Câmara/Assembleias, needle nacional, P(líder)
+  leave-one-out por corrida, bancadas com IC, banner de modo demonstração. Na noite, o runner
+  só recalcula o JSON. **GitHub Pages ativado**: https://agamemnon140.github.io/apuracao-2026/
+- **Régua do Quociente** ganhou: estadual, mínimos para eleger por agremiação (QE, 10% QE,
+  20% QE de sobra, corte prático), votos contabilizados, ritmo (fração apurada do candidato ÷
+  fração do estado, 100 = sem vento) e os 3 redutos de cada candidato com nome de município.
