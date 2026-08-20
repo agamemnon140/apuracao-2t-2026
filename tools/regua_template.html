@@ -1,0 +1,199 @@
+<title>Régua do Quociente</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --ground:#F7F8F6; --card:#FFFFFF; --ink:#1B2420; --muted:#5C6660; --line:#E3E7E2;
+  --accent:#0891B2; --accent-soft:#0891B21f; --eleito:#15803D; --eleito-soft:#15803D14;
+  --disputa:#B45309; --disputa-soft:#B4530914; --fora:#6B7280; --fora-soft:#6B72800f;
+  --regua-cheia:#0E7490; --regua-sobra:#67B7CC; --regua-vazia:#E3E7E2;
+  --hit:#15803D; --miss:#B4530922;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1513; --card:#16201C; --ink:#E6ECE8; --muted:#93A09A; --line:#26312C;
+    --accent:#2FA8C4; --accent-soft:#2FA8C426; --eleito:#34A863; --eleito-soft:#34A8631f;
+    --disputa:#D98A25; --disputa-soft:#D98A251f; --fora:#8A9490; --fora-soft:#8A949014;
+    --regua-cheia:#2FA8C4; --regua-sobra:#1E6E82; --regua-vazia:#26312C;
+    --hit:#34A863; --miss:#D98A2529;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1513; --card:#16201C; --ink:#E6ECE8; --muted:#93A09A; --line:#26312C;
+  --accent:#2FA8C4; --accent-soft:#2FA8C426; --eleito:#34A863; --eleito-soft:#34A8631f;
+  --disputa:#D98A25; --disputa-soft:#D98A251f; --fora:#8A9490; --fora-soft:#8A949014;
+  --regua-cheia:#2FA8C4; --regua-sobra:#1E6E82; --regua-vazia:#26312C;
+  --hit:#34A863; --miss:#D98A2529;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--ground);color:var(--ink);
+  font:16px/1.5 "Source Sans 3",system-ui,sans-serif;padding-bottom:4rem}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+header.top{border-bottom:1px solid var(--line);padding:28px 0 20px;margin-bottom:16px}
+h1{font:800 clamp(26px,4vw,38px)/1.1 Archivo,system-ui,sans-serif;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin-top:6px;max-width:68ch}
+.sub b{color:var(--ink)}
+.contexto{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.ctx{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:14px}
+.ctx b{font:700 17px Archivo;display:block;font-variant-numeric:tabular-nums}
+.ctx span{color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.06em}
+nav.cargos{display:flex;gap:8px;margin:18px 0 6px}
+.cargo-btn{font:700 14px Archivo;letter-spacing:.02em;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);border-radius:999px;padding:7px 18px;cursor:pointer}
+.cargo-btn[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.cargo-btn:focus-visible,.uf:focus-visible,.toggle:focus-visible,.mais:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ufs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 22px}
+.uf{font:600 13px Archivo;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:6px;padding:5px 10px;cursor:pointer;font-variant-numeric:tabular-nums}
+.uf[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.painel-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:18px;margin:4px 0 14px}
+.painel-meta h2{font:800 24px Archivo}
+.painel-meta .m{color:var(--muted);font-size:14px}
+.painel-meta .m b{color:var(--ink);font-variant-numeric:tabular-nums}
+.toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);
+  background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;color:var(--ink)}
+.toggle .dot{width:10px;height:10px;border-radius:50%;background:var(--fora)}
+.toggle[aria-pressed="true"] .dot{background:var(--eleito)}
+.agr{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.agr-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;padding:14px 18px 6px}
+.agr-head h3{font:800 19px Archivo;letter-spacing:.01em}
+.agr-head .n{color:var(--muted);font-size:13.5px}
+.agr-head .n b{color:var(--ink);font-variant-numeric:tabular-nums}
+.regua{padding:4px 18px 12px}
+.regua-track{position:relative;height:26px;background:var(--regua-vazia);border-radius:5px;overflow:hidden}
+.regua-fill{position:absolute;inset:0 auto 0 0;background:var(--regua-cheia)}
+.regua-sobra{position:absolute;top:0;bottom:0;background:var(--regua-sobra)}
+.regua-tick{position:absolute;top:0;bottom:0;width:2px;background:var(--ground)}
+.regua-lbl{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:4px;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{font:600 11px "Source Sans 3";text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  text-align:left;padding:8px 10px;border-top:1px solid var(--line)}
+td{padding:7px 10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:middle}
+td.nome{font-weight:600}
+td.nome small{color:var(--muted);font-weight:400}
+.pill{font:700 11px Archivo;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.p-eleito{color:var(--eleito);background:var(--eleito-soft)}
+.p-disputa{color:var(--disputa);background:var(--disputa-soft)}
+.p-fora{color:var(--fora);background:var(--fora-soft)}
+.pbar{display:flex;align-items:center;gap:8px;min-width:150px}
+.pbar .tr{flex:1;height:8px;background:var(--regua-vazia);border-radius:4px;overflow:hidden}
+.pbar .fi{height:100%;background:var(--accent);border-radius:4px}
+.pbar b{width:44px;text-align:right}
+.tgt-falta{color:var(--disputa)}
+.tgt-folga{color:var(--muted)}
+.vento-up{color:var(--eleito);font-weight:600}
+.vento-down{color:var(--muted)}
+.num{text-align:right}
+tr.revela-hit td.nome::after{content:" ✓ eleito de fato";color:var(--hit);font-size:12px;font-weight:700}
+tr.revela-miss{background:var(--miss)}
+tr.revela-miss td.nome::after{content:" ✗ ficou fora no final";color:var(--disputa);font-size:12px;font-weight:700}
+tr.oculto{display:none}
+.mais{background:none;border:none;color:var(--accent);font:600 13.5px "Source Sans 3";
+  cursor:pointer;padding:9px 10px;width:100%;text-align:left}
+.nota{color:var(--muted);font-size:13.5px;border-top:1px solid var(--line);margin-top:28px;padding-top:16px;max-width:75ch}
+.nota b{color:var(--ink)}
+@media(max-width:640px){.pbar{min-width:110px}.col-vento,.col-vproj{display:none}}
+</style>
+<div class="wrap">
+<header class="top">
+  <h1>Régua do Quociente</h1>
+  <p class="sub">A noite de 2 de outubro de 2022, re-tocada e <b>congelada com ~10% das seções
+  apuradas</b> (~18h30). Para cada agremiação, quantos quocientes eleitorais o modelo projeta;
+  para cada candidato, a <b>chance de eleição</b> naquele instante, os votos que faltavam para a
+  linha de corte e se a geografia que ainda não tinha apurado jogava a favor ou contra.</p>
+  <div class="contexto" id="ctx"></div>
+  <nav class="cargos" id="cargos" aria-label="Cargo"></nav>
+  <div class="ufs" id="ufs" role="group" aria-label="Estado"></div>
+</header>
+<main id="painel"></main>
+<p class="nota" id="nota"><b>Como ler.</b> A régua mostra os votos projetados da agremiação em
+unidades de quociente eleitoral (QE): cada célula cheia é uma cadeira garantida por quociente;
+o trecho claro no fim é a fração que disputa as sobras. P(eleito) vem de 250 eleições
+simuladas por sorteio — incerteza no total de cada agremiação e na ordem nominal interna,
+calibradas no próprio replay — passando cada sorteio pelo quociente e pelas sobras (regras da
+EC 111). <b>Target</b> é a distância até o último eleito projetado da própria agremiação.
+<b>Vento</b> é o quanto o share do candidato dentro do partido deve subir (▲) ou cair (▼)
+pelos municípios que ainda não apuraram. O botão “revelar” confere com quem de fato entrou.
+Demonstração sobre dados reais do TSE; um ciclo só — não é garantia de calibração em 2026.</p>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+const fmt = n => n==null ? "–" : n.toLocaleString("pt-BR");
+const state = {cargo:null, uf:"SP", revela:false, aberto:{}};
+
+function pill(p){
+  if(p>=.9) return '<span class="pill p-eleito">eleito</span>';
+  if(p>.1)  return '<span class="pill p-disputa">disputa</span>';
+  return '<span class="pill p-fora">fora</span>';
+}
+function ventoCell(c){
+  if(c.vento==null) return "–";
+  const up = c.vento>=0.05, down = c.vento<=-0.05;
+  const cls = up? "vento-up" : "vento-down";
+  const seta = up? "▲" : down? "▼" : "·";
+  const tt = `share dentro do partido deve ir de ${(c.pap??0).toFixed(0)}% apurado para o fim; vento ${c.vento>0?"+":""}${c.vento.toFixed(2)} p.p.`;
+  return `<span class="${cls}" title="${tt}">${seta} ${c.vento>0?"+":""}${c.vento.toFixed(2)}</span>`;
+}
+function render(){
+  const D = DATA[state.cargo]; if(!D) return;
+  const uf = D[state.uf] ? state.uf : Object.keys(D)[0];
+  const u = D[uf];
+  document.getElementById("ctx").innerHTML =
+    `<div class="ctx"><b>${fmt(u.cadeiras)}</b><span>cadeiras em ${uf}</span></div>`+
+    `<div class="ctx"><b>${fmt(u.qe)}</b><span>quociente eleitoral projetado</span></div>`+
+    `<div class="ctx"><b>${u.pct_secoes.toLocaleString("pt-BR")}%</b><span>seções apuradas</span></div>`;
+  document.getElementById("ufs").innerHTML = Object.keys(D).sort().map(k=>
+    `<button class="uf" aria-pressed="${k===uf}" onclick="state.uf='${k}';state.aberto={};render()">${k}</button>`).join("");
+  const maxQ = Math.max(...u.agrs.map(a=>a.quocientes), 1);
+  const painel = u.agrs.map((a,ai)=>{
+    const cheias = Math.floor(a.quocientes);
+    const wTotal = 100*a.quocientes/maxQ, wCheia = 100*cheias/maxQ;
+    let ticks = "";
+    for(let t=1;t<=Math.ceil(maxQ);t++) ticks += `<div class="regua-tick" style="left:${100*t/maxQ}%"></div>`;
+    const abertoKey = uf+"|"+a.agr;
+    const lim = state.aberto[abertoKey] ? a.cands.length : Math.min(8, a.cands.length);
+    const linhas = a.cands.map((c,i)=>{
+      const revela = state.revela ? (c.fim && c.p<0.5 ? "revela-hit revela-miss".split(" ")[0] :
+                     c.fim ? "revela-hit" : (c.p>=0.5 ? "revela-miss" : "")) : "";
+      const tgt = c.tgt==null ? "–" : c.in ?
+        `<span class="tgt-folga">folga ${fmt(Math.round(c.tgt))}</span>` :
+        `<span class="tgt-falta">faltam ${fmt(Math.round(c.tgt))}</span>`;
+      return `<tr class="${revela} ${i>=lim?"oculto":""}">
+        <td>${pill(c.p)}</td>
+        <td class="nome">${c.nome} <small>(${c.pt})</small></td>
+        <td><div class="pbar"><div class="tr"><div class="fi" style="width:${(100*c.p).toFixed(1)}%"></div></div><b>${(100*c.p).toFixed(0)}%</b></div></td>
+        <td class="num col-vproj">${fmt(c.v)}</td>
+        <td class="num">${tgt}</td>
+        <td class="num col-vento">${ventoCell(c)}</td></tr>`;
+    }).join("");
+    const btn = a.cands.length>8 && !state.aberto[abertoKey] ?
+      `<button class="mais" onclick="state.aberto['${abertoKey}']=1;render()">mostrar os ${a.cands.length-8} restantes ↓</button>` : "";
+    const rotulo = a.agr.startsWith("FED-") ? a.agr.slice(4).replace("/", " · ")
+      : (a.cands[0]?.pt ?? a.agr);
+    return `<section class="agr">
+      <div class="agr-head"><h3>${rotulo}</h3>
+        <span class="n"><b>${fmt(a.votos)}</b> votos proj.</span>
+        <span class="n"><b>${a.quocientes.toLocaleString("pt-BR")}</b> QE</span>
+        <span class="n"><b>${a.qp}</b> por quociente</span>
+        <span class="n"><b>${a.exp.toLocaleString("pt-BR")}</b> cadeiras esperadas</span></div>
+      <div class="regua"><div class="regua-track">
+        <div class="regua-fill" style="width:${wTotal}%"></div>
+        <div class="regua-sobra" style="left:${wCheia}%;width:${wTotal-wCheia}%"></div>
+        ${ticks}</div>
+        <div class="regua-lbl"><span>0</span><span>${Math.ceil(maxQ)} quocientes</span></div></div>
+      <table><thead><tr><th></th><th>candidato</th><th>P(eleito)</th>
+        <th class="num col-vproj">votos proj.</th><th class="num">target</th><th class="num col-vento">vento</th></tr></thead>
+      <tbody>${linhas}</tbody></table>${btn}</section>`;
+  }).join("");
+  document.getElementById("painel").innerHTML =
+    `<div class="painel-meta"><h2>${uf}</h2>
+     <span class="m"><b>${u.agrs.length}</b> agremiações com candidatos exibidos</span>
+     <button class="toggle" aria-pressed="${state.revela}"
+       onclick="state.revela=!state.revela;render()"><span class="dot"></span>revelar quem de fato entrou</button></div>`+painel;
+  document.getElementById("cargos").innerHTML = Object.keys(DATA).map(k=>
+    `<button class="cargo-btn" aria-pressed="${k===state.cargo}"
+      onclick="state.cargo='${k}';state.aberto={};render()">${k==="federal"?"Deputado Federal":"Deputado Estadual"}</button>`).join("");
+}
+state.cargo = Object.keys(DATA)[0];
+render();
+</script>

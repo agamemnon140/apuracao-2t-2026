@@ -20,7 +20,10 @@ from pipeline.modelo_estadual import BASE, CHAVE, monta as monta_gov, projeta as
 from pipeline.modelo_estadual import eixo_2018
 
 import sys
-_min = int(sys.argv[1]) if len(sys.argv) > 1 else 15
+try:                                   # so vale quando rodado como script
+    _min = int(sys.argv[1]) if len(sys.argv) > 1 else 15
+except ValueError:
+    _min = 15
 CORTE = dt.datetime(2022, 10, 2, 17, 0, 0) + dt.timedelta(minutes=_min)
 
 
