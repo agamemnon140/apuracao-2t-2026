@@ -37,9 +37,14 @@ def qe_oficial(validos: float, cadeiras: int) -> int:
     return inteiro + 1 if (q - inteiro) > 0.5 else max(inteiro, 1)
 
 
-def aloca(votos_agr: dict[str, float], nominais: dict[str, float], uf: str) -> list[str]:
-    """Devolve a lista dos nr de candidato eleitos. nominais: {nr_candidato: votos}."""
-    vagas = CADEIRAS[uf]
+def aloca(votos_agr: dict[str, float], nominais: dict[str, float], uf: str,
+          vagas: int | None = None) -> list[str]:
+    """Devolve a lista dos nr de candidato eleitos. nominais: {nr_candidato: votos}.
+
+    `vagas` default e a Camara federal; assembleia estadual passa o tamanho dela --
+    esquecer isso ja fez o needle estadual eleger 513 deputados num pais com 1.059.
+    """
+    vagas = vagas if vagas is not None else CADEIRAS[uf]
     validos = sum(votos_agr.values())
     qe = qe_oficial(validos, vagas)
 

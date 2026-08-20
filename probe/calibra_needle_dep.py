@@ -24,13 +24,15 @@ def main() -> None:
     calib = {(int(float(k)) if float(k) == int(float(k)) else float(k)): v
              for k, v in bruto.items()}
     dados = carrega(CARGO)
-    todos = []
+    todos, seats = [], []
     for uf in sorted(dados[0]["uf"].unique()):
         df, meta = needle_uf(CARGO, uf, P, calib, ndraws=250, dados=dados)
         todos.append(df)
+        seats.append(meta["seats_draws"].assign(uf=uf))
         print(f"  {uf} ok ({meta['pct_secoes']:.1f}% das secoes)", flush=True)
     d = pd.concat(todos)
     d.to_parquet(BASE / f"needle_{CARGO}_p{P:g}.parquet", index=False)
+    pd.concat(seats).to_parquet(BASE / f"seats_{CARGO}_p{P:g}.parquet", index=False)
 
     print(f"\n{CARGO.upper()} com {P:g}% apurado — {len(d):,} candidatos")
     d["faixa"] = pd.cut(d["p_eleito"], [-.001, .02, .1, .3, .5, .7, .9, .98, 1.001],

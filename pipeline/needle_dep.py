@@ -104,7 +104,8 @@ def needle_uf(cargo, uf, p, calib, ndraws=300, seed=2026, dados=None):
              else 0.9 for a, d in por_agr.items()}
 
     conta = {}
-    for _ in range(ndraws):
+    seats_draws = []                       # (sorteio, agremiacao, cadeiras) p/ bancada com IC
+    for _dr in range(ndraws):
         eps = rng.normal(0, k * np.sqrt(np.clip(s * (1 - s), 1e-9, None)))
         sd = np.clip(s + eps, 0, None)
         sd = sd / sd.sum()
@@ -120,8 +121,13 @@ def needle_uf(cargo, uf, p, calib, ndraws=300, seed=2026, dados=None):
             tot = votos_agr[a] * f_nom.get(a, 0.9)
             for x, sh in zip(nrs, shares):
                 nominais[x] = tot * sh
-        for e in aloca(votos_agr, nominais, uf):
+        el = aloca(votos_agr, nominais, uf, vagas=cadeiras[uf])
+        por = {}
+        for e in el:
             conta[e] = conta.get(e, 0) + 1
+            a_ = agremiacao(e[:2])
+            por[a_] = por.get(a_, 0) + 1
+        seats_draws += [(_dr, a_, c_) for a_, c_ in por.items()]
 
     # projecao de ponto (para target/corte) e referencia final
     votos_pt = {a: float(pr[a] * validos) for a in agrs}
@@ -132,12 +138,14 @@ def needle_uf(cargo, uf, p, calib, ndraws=300, seed=2026, dados=None):
         ss = sum(d.values())
         for x, v in d.items():
             nom_pt[x] = votos_pt[a] * (v / ss) * f_nom.get(a, 0.9)
-    eleitos_pt = set(aloca(votos_pt, nom_pt, uf))
+    eleitos_pt = set(aloca(votos_pt, nom_pt, uf, vagas=cadeiras[uf]))
     va_fim = votos_l[votos_l["uf"] == uf].groupby("quem")["votos"].sum().astype(float).to_dict()
-    ref = set(aloca(va_fim, fim.to_dict(), uf))
+    ref = set(aloca(va_fim, fim.to_dict(), uf, vagas=cadeiras[uf]))
 
     # nr se repete entre UFs -- filtrar antes de indexar, senao .get devolve Series
     nomes = oficial[oficial["uf"] == uf].drop_duplicates("nr").set_index("nr")[["nome", "partido"]]
+    va_estado_ap = float(sec["validos"].iloc[:n].sum())   # validos ja contados no estado
+    fr_estado = va_estado_ap / validos                    # fracao do estado ja apurada
     linhas = []
     for a, d in por_agr.items():
         eleitos_a = sorted((x for x in eleitos_pt if agremiacao(x[:2]) == a),
@@ -145,18 +153,25 @@ def needle_uf(cargo, uf, p, calib, ndraws=300, seed=2026, dados=None):
         corte = nom_pt[eleitos_a[-1]] if eleitos_a else None
         for x, v in sorted(d.items(), key=lambda kv: -kv[1]):
             pv = nom_pt.get(x, 0.0)
+            # ritmo: fracao apurada do candidato / fracao apurada do estado.
+            # 100% = sem vento; <100% = o grosso dele ainda esta por vir (vento a favor)
+            ritmo = (float(v) / pv) / fr_estado if pv > 0 and fr_estado > 0 else None
             linhas.append({
                 "uf": uf, "agr": a, "nr": x,
                 "nome": nomes["nome"].get(x, x), "partido": nomes["partido"].get(x, x[:2]),
                 "p_eleito": conta.get(x, 0) / ndraws,
-                "votos_proj": pv,
+                "votos_proj": pv, "votos_apurados": float(v),
+                "ritmo": (round(100 * ritmo, 1) if ritmo is not None else None),
+                "corte_agr": corte,
                 "eleito_agora": x in eleitos_pt,
                 "target": (corte - pv) if (corte is not None and x not in eleitos_pt) else
                           (pv - corte if corte is not None else None),
                 "eleito_final": x in ref,
             })
-    return pd.DataFrame(linhas), {"qe_proj": sum(votos_pt.values()) / cadeiras[uf],
-                                  "cadeiras": cadeiras[uf], "pct_secoes": 100 * n / len(sec)}
+    qe_proj = sum(votos_pt.values()) / cadeiras[uf]
+    meta = {"qe_proj": qe_proj, "cadeiras": cadeiras[uf], "pct_secoes": 100 * n / len(sec),
+            "seats_draws": pd.DataFrame(seats_draws, columns=["draw", "agr", "seats"])}
+    return pd.DataFrame(linhas), meta
 
 
 def vento_uf(cargo, uf, p, dados=None, tau=200.0):
@@ -212,6 +227,10 @@ def vento_uf(cargo, uf, p, dados=None, tau=200.0):
     resto_sem = {a: sum(v for (m, aa), v in resto_agr.items()
                         if aa == a and m not in mun_com) for a in pr.index}
 
+    top3 = (cm.sort_values("votos", ascending=False).groupby("nr")
+            .apply(lambda g: [(m_, int(v_)) for m_, v_ in
+                              zip(g["cd_municipio"].head(3), g["votos"].head(3))],
+                   include_groups=False).to_dict())
     out = []
     for nr, v_ap in tot_cand.items():
         a = agremiacao(nr[:2])
@@ -220,5 +239,6 @@ def vento_uf(cargo, uf, p, dados=None, tau=200.0):
         w_ap = float(v_ap / tot_agr[a]) if tot_agr[a] > 0 else 0
         w_esp = esp / agr_esp if agr_esp > 0 else w_ap
         out.append({"nr": nr, "vento": 100 * (w_esp - w_ap),
-                    "pct_apurado": 100 * v_ap / esp if esp > 0 else 100})
+                    "pct_apurado": 100 * v_ap / esp if esp > 0 else 100,
+                    "top3": top3.get(nr, [])})
     return pd.DataFrame(out)

@@ -1,0 +1,168 @@
+<title>Apuração 2026</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --ground:#F7F8F6; --card:#FFFFFF; --ink:#1B2420; --muted:#5C6660; --line:#E3E7E2;
+  --accent:#0891B2; --accent-soft:#0891B21f; --bom:#15803D; --bom-soft:#15803D14;
+  --meio:#B45309; --meio-soft:#B4530914; --neutro:#6B7280; --neutro-soft:#6B72800f;
+  --bar:#0E7490; --bar-tr:#0E749055; --demo:#B45309; --demo-bg:#B4530912;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1513; --card:#16201C; --ink:#E6ECE8; --muted:#93A09A; --line:#26312C;
+    --accent:#2FA8C4; --accent-soft:#2FA8C426; --bom:#34A863; --bom-soft:#34A8631f;
+    --meio:#D98A25; --meio-soft:#D98A251f; --neutro:#8A9490; --neutro-soft:#8A949014;
+    --bar:#2FA8C4; --bar-tr:#2FA8C455; --demo:#D98A25; --demo-bg:#D98A2515;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1513; --card:#16201C; --ink:#E6ECE8; --muted:#93A09A; --line:#26312C;
+  --accent:#2FA8C4; --accent-soft:#2FA8C426; --bom:#34A863; --bom-soft:#34A8631f;
+  --meio:#D98A25; --meio-soft:#D98A251f; --neutro:#8A9490; --neutro-soft:#8A949014;
+  --bar:#2FA8C4; --bar-tr:#2FA8C455; --demo:#D98A25; --demo-bg:#D98A2515;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--ground);color:var(--ink);font:16px/1.5 "Source Sans 3",system-ui,sans-serif;padding-bottom:4rem}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+.demo-banner{background:var(--demo-bg);border-bottom:1px solid var(--line);padding:9px 0;font-size:14px}
+.demo-banner .wrap{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.demo-banner b{color:var(--demo);text-transform:uppercase;font:700 12px Archivo;letter-spacing:.06em}
+header.top{padding:26px 0 0}
+h1{font:800 clamp(28px,4.5vw,40px)/1.05 Archivo;letter-spacing:-.01em}
+.sub{color:var(--muted);margin-top:6px;max-width:70ch}
+nav.abas{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0 0;border-bottom:1px solid var(--line);padding-bottom:0}
+.aba{font:700 14.5px Archivo;letter-spacing:.02em;background:none;border:none;color:var(--muted);
+  padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent}
+.aba[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.aba:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+main{padding-top:22px}
+.hero{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:18px}
+.hero h2{font:800 22px Archivo;margin-bottom:4px}
+.hero .quando{color:var(--muted);font-size:13.5px}
+.needle{margin:18px 0 8px}
+.needle-track{position:relative;height:34px;background:linear-gradient(90deg,var(--bar-tr),var(--ground) 50%,var(--bar-tr));border:1px solid var(--line);border-radius:8px}
+.needle-zero{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:var(--muted)}
+.needle-pt{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--bar);
+  transform:translate(-50%,-50%);box-shadow:0 0 0 3px var(--card)}
+.needle-cru{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--neutro);
+  transform:translate(-50%,-50%);opacity:.75}
+.needle-lbl{display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px;margin-top:6px}
+.hero-nums{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px}
+.hn b{font:800 26px Archivo;font-variant-numeric:tabular-nums;display:block}
+.hn span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
+.uf-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.uf-card h3{font:800 18px Archivo;display:flex;justify-content:space-between;align-items:baseline}
+.uf-card h3 small{font:600 11.5px "Source Sans 3";color:var(--muted)}
+.linha{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-top:6px}
+.linha .quem{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.linha .quem em{font-style:normal;color:var(--muted);font-weight:400}
+.linha .sh{font-variant-numeric:tabular-nums;color:var(--muted)}
+.pillp{font:700 11px Archivo;letter-spacing:.03em;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.pp-alta{color:var(--bom);background:var(--bom-soft)}
+.pp-media{color:var(--meio);background:var(--meio-soft)}
+.pp-baixa{color:var(--neutro);background:var(--neutro-soft)}
+.banc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.banc h2{font:800 20px Archivo;margin-bottom:2px}
+.banc .exp{color:var(--muted);font-size:13.5px;margin-bottom:14px}
+.brow{display:grid;grid-template-columns:130px 1fr 120px;gap:12px;align-items:center;padding:5px 0;font-size:14px}
+.brow .sig{font:700 14px Archivo;text-align:right}
+.btrack{position:relative;height:16px;background:var(--neutro-soft);border-radius:4px}
+.bfill{position:absolute;top:0;bottom:0;left:0;background:var(--bar);border-radius:4px}
+.bic{position:absolute;top:50%;height:3px;background:var(--ink);opacity:.55;transform:translateY(-50%)}
+.bnum{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.bnum b{color:var(--ink);font-size:15px}
+.aviso{color:var(--muted);font-size:13.5px;margin:14px 0;max-width:75ch}
+.aviso b{color:var(--ink)}
+a{color:var(--accent)}
+.rodape{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:30px;padding-top:14px}
+[hidden]{display:none !important}
+@media(max-width:560px){.brow{grid-template-columns:92px 1fr 90px}}
+</style>
+<div class="demo-banner"><div class="wrap"><b>modo demonstração</b>
+<span id="demo-txt">replay da noite de 2022, congelado — em 4 de outubro de 2026 esta página passa a ler o parcial real do TSE.</span></div></div>
+<div class="wrap">
+<header class="top">
+  <h1>Apuração 2026</h1>
+  <p class="sub">Projeção do resultado final <b>durante</b> a apuração, a partir das seções já
+  totalizadas — corrigindo o viés de quem apura primeiro. Só voto contado: nenhuma pesquisa.</p>
+  <nav class="abas" role="tablist" id="abas"></nav>
+</header>
+<main id="main"></main>
+<p class="rodape">Modelo e validação: <a href="https://github.com/agamemnon140/apuracao-2026">apuracao-2026</a>
+· <a href="METODO.md">método e parâmetros</a> · needle por deputado: <a href="regua-quociente.html">Régua do Quociente</a>.
+Dados: TSE. Projeção não é resultado oficial.</p>
+</div>
+<script>
+const FALLBACK = /*__LIVE__*/null;
+const ABAS = [["presidente","Presidente"],["governos","Governos"],["senado","Senado"],
+              ["camara","Câmara"],["assembleias","Assembleias"]];
+let LIVE = FALLBACK, aba = "presidente";
+const fmt = n => n==null ? "–" : n.toLocaleString("pt-BR");
+
+function pillP(p){
+  const pct = (100*p).toFixed(0)+"%";
+  if(p>=.9) return `<span class="pillp pp-alta">${pct}</span>`;
+  if(p>=.6) return `<span class="pillp pp-media">${pct}</span>`;
+  return `<span class="pillp pp-baixa">${pct}</span>`;
+}
+function heroPresidente(pr){
+  const esc = 25;                       // escala do needle: ±25 pontos de margem
+  const pos = m => 50 + 50*Math.max(-1,Math.min(1,m/esc));
+  return `<section class="hero">
+    <h2>Presidente — projeção nacional</h2>
+    <div class="quando">${LIVE.congelado_em} · ${pr.pct_secoes}% das seções totalizadas</div>
+    <div class="needle"><div class="needle-track">
+      <div class="needle-zero"></div>
+      <div class="needle-cru" style="left:${pos(pr.tela_crua)}%" title="o que a tela crua mostrava: ${pr.tela_crua>0?"+":""}${pr.tela_crua}"></div>
+      <div class="needle-pt" style="left:${pos(pr.margem)}%" title="projeção do modelo"></div>
+    </div><div class="needle-lbl"><span>← oposição</span><span>empate</span><span>${pr.lider} →</span></div></div>
+    <div class="hero-nums">
+      <div class="hn"><b>${pr.margem>0?"+":""}${pr.margem.toLocaleString("pt-BR")}</b><span>margem projetada (válidos)</span></div>
+      <div class="hn"><b>${(100*pr.p_lider).toFixed(1)}%</b><span>prob. de ${pr.lider} liderar no fim</span></div>
+      <div class="hn"><b>${pr.tela_crua>0?"+":""}${pr.tela_crua.toLocaleString("pt-BR")}</b><span>o que a tela crua dizia</span></div>
+    </div>
+    <p class="aviso">O ponto pequeno cinza é o parcial cru — em 2022 ele apontou o <b>perdedor</b>
+    por quase três horas. O ponto grande é a projeção corrigida pela composição de quem já apurou.</p>
+  </section>`;
+}
+function gridUF(lista, nota){
+  const cards = lista.map(g=>`<div class="uf-card">
+    <h3>${g.uf} <small>${g.pct_secoes}% apurado</small></h3>
+    <div class="linha"><span class="quem">${g.lider}</span>${pillP(g.p_lider)}</div>
+    <div class="linha"><span class="quem" style="font-weight:400">projetado <em>${g.share}%</em></span></div>
+    <div class="linha"><span class="quem" style="font-weight:400">2º ${g.segundo} <em>${g.share2}%</em></span></div>
+  </div>`).join("");
+  return `<p class="aviso">${nota}</p><div class="grid">${cards}</div>`;
+}
+function bancada(b, titulo, exp){
+  if(!b) return `<p class="aviso">bancada indisponível neste snapshot.</p>`;
+  const max = Math.max(...b.nacional.map(x=>x.p90));
+  const rows = b.nacional.map(x=>`<div class="brow">
+    <div class="sig">${x.agr}</div>
+    <div class="btrack"><div class="bfill" style="width:${100*x.med/max}%"></div>
+      <div class="bic" style="left:${100*x.p10/max}%;width:${100*(x.p90-x.p10)/max}%"></div></div>
+    <div class="bnum"><b>${x.med}</b> (${x.p10}–${x.p90})</div>
+  </div>`).join("");
+  return `<section class="banc"><h2>${titulo}</h2><p class="exp">${exp}</p>${rows}
+  <p class="aviso">A barra é a mediana dos sorteios; o traço fino, o intervalo de 80%
+  (p10–p90). Detalhe candidato a candidato na <a href="regua-quociente.html">Régua do Quociente</a>.</p></section>`;
+}
+function render(){
+  document.getElementById("abas").innerHTML = ABAS.map(([k,r])=>
+    `<button class="aba" role="tab" aria-selected="${k===aba}" onclick="aba='${k}';render()">${r}</button>`).join("");
+  const m = document.getElementById("main");
+  if(!LIVE){ m.innerHTML = '<p class="aviso">carregando dados…</p>'; return; }
+  if(aba==="presidente") m.innerHTML = heroPresidente(LIVE.presidente);
+  if(aba==="governos") m.innerHTML = gridUF(LIVE.governos,
+    "P é a chance de o líder projetado vencer, medida pelos erros do modelo em corridas equivalentes — não pelo parcial cru.");
+  if(aba==="senado") m.innerHTML = gridUF(LIVE.senado,
+    "Em 2022 cada estado elegeu 1 senador. Em 2026 serão 2 vagas por estado: este painel passa a mostrar P(ficar entre os 2).");
+  if(aba==="camara") m.innerHTML = bancada(LIVE.camara,
+    "Câmara dos Deputados — bancada nacional projetada", "513 cadeiras somadas pelos mesmos sorteios que dão o P(eleito) de cada candidato.");
+  if(aba==="assembleias") m.innerHTML = bancada(LIVE.assembleias,
+    "Assembleias estaduais — soma das 27 casas", "1.059 cadeiras estaduais projetadas pela mesma máquina de quociente e sobras.");
+}
+fetch("dados/live.json?t="+Date.now()).then(r=>r.json()).then(j=>{LIVE=j;render();}).catch(()=>render());
+render();
+</script>

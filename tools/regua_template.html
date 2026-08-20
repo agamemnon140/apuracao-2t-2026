@@ -59,6 +59,12 @@ nav.cargos{display:flex;gap:8px;margin:18px 0 6px}
 .agr-head h3{font:800 19px Archivo;letter-spacing:.01em}
 .agr-head .n{color:var(--muted);font-size:13.5px}
 .agr-head .n b{color:var(--ink);font-variant-numeric:tabular-nums}
+.minimos{display:flex;flex-wrap:wrap;gap:14px;padding:0 18px 4px;color:var(--muted);font-size:12.5px}
+.minimos b{color:var(--ink);font-variant-numeric:tabular-nums}
+td.nome .reg{display:block;color:var(--muted);font-size:11.5px;font-weight:400}
+.ritmo-fav{color:var(--eleito);font-weight:600}
+.ritmo-con{color:var(--disputa)}
+.ritmo-neu{color:var(--muted)}
 .regua{padding:4px 18px 12px}
 .regua-track{position:relative;height:26px;background:var(--regua-vazia);border-radius:5px;overflow:hidden}
 .regua-fill{position:absolute;inset:0 auto 0 0;background:var(--regua-cheia)}
@@ -112,8 +118,11 @@ o trecho claro no fim é a fração que disputa as sobras. P(eleito) vem de 250 
 simuladas por sorteio — incerteza no total de cada agremiação e na ordem nominal interna,
 calibradas no próprio replay — passando cada sorteio pelo quociente e pelas sobras (regras da
 EC 111). <b>Target</b> é a distância até o último eleito projetado da própria agremiação.
-<b>Vento</b> é o quanto o share do candidato dentro do partido deve subir (▲) ou cair (▼)
-pelos municípios que ainda não apuraram. O botão “revelar” confere com quem de fato entrou.
+<b>Ritmo</b> compara a fração já apurada do candidato com a do estado: 100% = mesmo passo;
+abaixo (▲) os redutos dele ainda estão por vir, acima (▼) o grosso já passou. Os <b>mínimos</b>
+de cada agremiação: 1 cadeira sai a cada quociente eleitoral de votos; vaga de quociente exige
+10% do QE em voto nominal; sobra exige 20%; o corte prático é o voto do último eleito projetado
+da agremiação. O botão “revelar” confere com quem de fato entrou.
 Demonstração sobre dados reais do TSE; um ciclo só — não é garantia de calibração em 2026.</p>
 </div>
 <script>
@@ -126,13 +135,17 @@ function pill(p){
   if(p>.1)  return '<span class="pill p-disputa">disputa</span>';
   return '<span class="pill p-fora">fora</span>';
 }
-function ventoCell(c){
-  if(c.vento==null) return "–";
-  const up = c.vento>=0.05, down = c.vento<=-0.05;
-  const cls = up? "vento-up" : "vento-down";
-  const seta = up? "▲" : down? "▼" : "·";
-  const tt = `share dentro do partido deve ir de ${(c.pap??0).toFixed(0)}% apurado para o fim; vento ${c.vento>0?"+":""}${c.vento.toFixed(2)} p.p.`;
-  return `<span class="${cls}" title="${tt}">${seta} ${c.vento>0?"+":""}${c.vento.toFixed(2)}</span>`;
+function ritmoCell(c){
+  if(c.ritmo==null) return "–";
+  // ritmo = (apurado do candidato / projetado dele) ÷ (apurado do estado / projetado do estado)
+  // 100% = mesmo passo do estado; <100% = o grosso dele ainda vem (vento a favor)
+  const fav = c.ritmo < 97, con = c.ritmo > 103;
+  const cls = fav? "ritmo-fav" : con? "ritmo-con" : "ritmo-neu";
+  const seta = fav? "▲" : con? "▼" : "·";
+  const tt = fav? "apurou mais devagar que o estado: os redutos dele ainda estão por vir"
+           : con? "apurou mais rápido que o estado: o grosso dele já passou"
+           : "no mesmo passo do estado";
+  return `<span class="${cls}" title="${tt}">${seta} ${c.ritmo.toFixed(0)}%</span>`;
 }
 function render(){
   const D = DATA[state.cargo]; if(!D) return;
@@ -158,13 +171,15 @@ function render(){
       const tgt = c.tgt==null ? "–" : c.in ?
         `<span class="tgt-folga">folga ${fmt(Math.round(c.tgt))}</span>` :
         `<span class="tgt-falta">faltam ${fmt(Math.round(c.tgt))}</span>`;
+      const reg = (c.reg&&c.reg.length)? `<span class="reg">${c.reg.map(r=>r[0]).join(" · ")}</span>` : "";
       return `<tr class="${revela} ${i>=lim?"oculto":""}">
         <td>${pill(c.p)}</td>
-        <td class="nome">${c.nome} <small>(${c.pt})</small></td>
+        <td class="nome">${c.nome} <small>(${c.pt})</small>${reg}</td>
         <td><div class="pbar"><div class="tr"><div class="fi" style="width:${(100*c.p).toFixed(1)}%"></div></div><b>${(100*c.p).toFixed(0)}%</b></div></td>
+        <td class="num">${fmt(c.vap)}</td>
         <td class="num col-vproj">${fmt(c.v)}</td>
         <td class="num">${tgt}</td>
-        <td class="num col-vento">${ventoCell(c)}</td></tr>`;
+        <td class="num col-vento">${ritmoCell(c)}</td></tr>`;
     }).join("");
     const btn = a.cands.length>8 && !state.aberto[abertoKey] ?
       `<button class="mais" onclick="state.aberto['${abertoKey}']=1;render()">mostrar os ${a.cands.length-8} restantes ↓</button>` : "";
@@ -173,16 +188,22 @@ function render(){
     return `<section class="agr">
       <div class="agr-head"><h3>${rotulo}</h3>
         <span class="n"><b>${fmt(a.votos)}</b> votos proj.</span>
-        <span class="n"><b>${a.quocientes.toLocaleString("pt-BR")}</b> QE</span>
-        <span class="n"><b>${a.qp}</b> por quociente</span>
-        <span class="n"><b>${a.exp.toLocaleString("pt-BR")}</b> cadeiras esperadas</span></div>
+        <span class="n"><b>${a.quocientes.toLocaleString("pt-BR")}</b> quocientes</span>
+        <span class="n"><b>${a.qp}</b> cadeiras por QP</span>
+        <span class="n">bancada <b>${a.ic[0]}–${a.ic[2]}</b> (mediana ${a.ic[1]})</span></div>
+      <div class="minimos">
+        <span>1 cadeira por quociente: <b>${fmt(u.qe)}</b> votos da agremiação</span>
+        <span>piso individual p/ vaga de QP: <b>${fmt(Math.round(u.qe*0.10))}</b></span>
+        <span>piso p/ disputar sobra: <b>${fmt(Math.round(u.qe*0.20))}</b></span>
+        <span>corte prático agora: <b>${a.corte? fmt(a.corte) : "–"}</b></span></div>
       <div class="regua"><div class="regua-track">
         <div class="regua-fill" style="width:${wTotal}%"></div>
         <div class="regua-sobra" style="left:${wCheia}%;width:${wTotal-wCheia}%"></div>
         ${ticks}</div>
         <div class="regua-lbl"><span>0</span><span>${Math.ceil(maxQ)} quocientes</span></div></div>
-      <table><thead><tr><th></th><th>candidato</th><th>P(eleito)</th>
-        <th class="num col-vproj">votos proj.</th><th class="num">target</th><th class="num col-vento">vento</th></tr></thead>
+      <table><thead><tr><th></th><th>candidato · redutos</th><th>P(eleito)</th>
+        <th class="num">apurados</th><th class="num col-vproj">projetados</th>
+        <th class="num">target</th><th class="num col-vento">ritmo</th></tr></thead>
       <tbody>${linhas}</tbody></table>${btn}</section>`;
   }).join("");
   document.getElementById("painel").innerHTML =
