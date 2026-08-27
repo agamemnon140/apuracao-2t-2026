@@ -28,10 +28,10 @@ from .caminhos import BRUTO_TSE, SAIDA, UFS
  ESC_FUND, ESC_MEDIO, ESC_SUP, ESC_VAL) = range(12)
 
 
-def acumula_uf(uf: str, acc: dict) -> int:
-    z = zipfile.ZipFile(BRUTO_TSE / "2022" / "perfil_secao" / f"perfil_eleitor_secao_2022_{uf}.zip")
+def acumula_uf(ano: int, uf: str, acc: dict) -> int:
+    z = zipfile.ZipFile(BRUTO_TSE / str(ano) / "perfil_secao" / f"perfil_eleitor_secao_{ano}_{uf}.zip")
     n = 0
-    with z.open(f"perfil_eleitor_secao_2022_{uf}.csv") as fh:
+    with z.open(f"perfil_eleitor_secao_{ano}_{uf}.csv") as fh:
         rd = csv.DictReader(io.TextIOWrapper(fh, encoding="latin-1"), delimiter=";")
         for r in rd:
             q = int(r["QT_ELEITORES_PERFIL"])
@@ -73,10 +73,11 @@ def acumula_uf(uf: str, acc: dict) -> int:
 
 
 def main() -> int:
+    ano = int(sys.argv[1]) if len(sys.argv) > 1 else 2022
     acc: dict = {}
     for uf in UFS:
         t0 = time.time()
-        n = acumula_uf(uf, acc)
+        n = acumula_uf(ano, uf, acc)
         print(f"{uf}: {n} linhas, {len(acc)} secoes acumuladas [{time.time() - t0:.0f}s]", flush=True)
 
     df = pd.DataFrame([(k[0], k[1], k[2], k[3], *v) for k, v in acc.items()],
@@ -94,7 +95,7 @@ def main() -> int:
             "esc_fund", "esc_medio", "esc_sup", "esc_val"]
     df = df.drop(columns=fora)
     SAIDA.mkdir(parents=True, exist_ok=True)
-    destino = SAIDA / "perfil_secao_2022.parquet"
+    destino = SAIDA / f"perfil_secao_{ano}.parquet"
     df.to_parquet(destino, index=False)
     print(f"{len(df)} secoes, gravado {destino}")
     return 0

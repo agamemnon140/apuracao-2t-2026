@@ -83,10 +83,11 @@ footer p{margin:.35em 0}
   <div class="eyebrow">apuração-2026 · série sintético · 2º turno 2022</div>
   <h1>Voto Sintético</h1>
   <p class="stand">Quanto do voto brasileiro dá para reconstruir só com demografia?
-  Um logit multinomial sobre <span class="num">470.481</span> seções eleitorais decompõe o
-  2º turno de 2022 — Lula, Bolsonaro e <em>nenhum</em> (brancos, nulos e abstenção) — em
-  raça, religião, região, idade, escolaridade, renda, ocupação e território, e depois
-  projeta o que a deriva demográfica faz com 2026.</p>
+  Um logit multinomial por seção eleitoral decompõe os <b>quatro 2ºs turnos de
+  2010 a 2022</b> — esquerda, direita e <em>nenhum</em> (brancos, nulos e abstenção) — em
+  raça, religião, região, idade, escolaridade, renda, ocupação e território; mede como
+  cada peso derivou entre os ciclos, calcula o <em>vento</em> não-demográfico de cada
+  eleição e projeta o que a deriva demográfica faz com 2026.</p>
   <div class="tiles">
     <div class="tile"><div class="v num" id="t-dev">—</div><div class="l">da variação entre seções explicada (deviance vs. modelo saturado)</div></div>
     <div class="tile"><div class="v num" id="t-r2">—</div><div class="l">R² do share de Lula nos válidos, seção a seção</div></div>
@@ -182,6 +183,56 @@ footer p{margin:.35em 0}
 </section>
 
 <section>
+  <h2>Quatro eleições, o mesmo modelo</h2>
+  <p>O backfill ajusta a mesma especificação aos 2ºs turnos de 2010, 2014 e 2018 —
+  perfil do eleitorado do próprio ano por seção, entorno censitário interpolado
+  linearmente entre os Censos 2010 e 2022 (decisão de projeto), religião municipal
+  interpolada, estrutura econômica congelada. Tudo padronizado na régua de 2022, para
+  os coeficientes serem comparáveis entre ciclos.</p>
+  <div class="fig">
+    <h3>Ajuste por ciclo</h3>
+    <div id="tab-fit"></div>
+    <div class="cap">Deviance explicada contra o modelo saturado por seção; R² e erro no share de esquerda nos válidos, seção a seção.</div>
+  </div>
+  <div class="fig">
+    <h3>Deriva dos coeficientes, 2010 → 2022</h3>
+    <div class="legend"><span>log-chance esquerda:direita por +1 dp (régua de 2022) · <span class="sw" style="background:var(--lula)"></span>puxa esquerda · <span class="sw" style="background:var(--bolso)"></span>puxa direita</span></div>
+    <div id="fig-deriva"></div>
+    <div class="cap">Os oito eixos que mais mudaram ou mais pesam. A guinada evangélica e a inversão da escolaridade acontecem quase inteiras entre 2014 e 2018.</div>
+  </div>
+  <p>Três achados saltam da deriva. <b>A clivagem racial não é bolsonarista:</b> % de
+  brancos no entorno já era o maior preditor pró-direita em 2010, contra o PSDB, e mal se
+  moveu desde então. <b>A guinada evangélica é recente e concentrada:</b> o peso vai de
+  −0,04 em 2010 para −0,19 em 2022, com quase todo o salto entre 2014 e 2018. E <b>o agro
+  troca de lado:</b> peso do agro no PIB era levemente <em>pró-esquerda</em> em 2010/2014 e
+  inverte para pró-direita em 2018/2022 — o realinhamento da fronteira agropecuária em
+  números. No agregado, o voto ficou cada vez mais previsível pela demografia até 2018
+  (72% da deviance) e recuou em 2022 (62%), quando a eleição voltou a ser menos
+  “sociológica” e mais disputada dentro dos mesmos grupos.</p>
+</section>
+
+<section>
+  <h2>O vento de cada eleição</h2>
+  <p>Teste preditivo real: pegue o comportamento estimado num ciclo e aplique à demografia
+  do ciclo seguinte. O que sobra — a distância entre essa previsão e o resultado — é o
+  <em>vento</em> nacional daquela eleição: campanha, economia, incumbência, tudo que não é
+  composição do eleitorado.</p>
+  <div class="fig">
+    <h3>Comportamento anterior + demografia nova vs. realidade</h3>
+    <div id="tab-vento"></div>
+    <div class="cap num" id="cap-vento"></div>
+  </div>
+  <p>A demografia sozinha é um previsor honesto mas incompleto: bate a previsão ingênua
+  (“repete o nacional anterior”) em 2014 e 2018, e perde em 2022 — a virada de 2022 foi
+  <em>comportamental</em>, não composicional. E o padrão dos ventos é um só:
+  <b>os três sopraram contra quem segurava a caneta</b>. Vento pró-direita com a esquerda
+  incumbente (2014, +0,11), pró-direita contra o ciclo petista que acabara no impeachment
+  (2018, +0,14), pró-esquerda com a direita incumbente (2022, −0,36). Com n=3 isso não é
+  estimativa causal de incumbência — mas é a régua histórica que a seção seguinte usa:
+  ventos reais ficaram entre 0,1 e 0,36 em módulo, sempre anti-incumbente.</p>
+</section>
+
+<section>
   <h2>2026: o que a demografia sozinha faz</h2>
   <p>Congelando o comportamento de 2022 (os coeficientes) e trocando só a composição do
   eleitorado — o cadastro real de agosto/2026 para sexo, idade e escolaridade, e a
@@ -197,14 +248,16 @@ footer p{margin:.35em 0}
   miolo de idade pende ligeiramente Bolsonaro, o efeito líquido é contra a esquerda —
   e os evangélicos seguem crescendo (+1,6pp na extrapolação municipal).</p>
   <h3 style="margin-top:26px">E a incumbência?</h3>
-  <p>Com um ciclo só, o efeito de ser governo <b>não é estimável</b> — não há variação para
-  medir. Ele entra como cenário declarado: um deslocamento uniforme na log-chance da
-  direita. A régua abaixo converte cada hipótese em resultado nacional, já sobre a
+  <p>O efeito de ser governo entra como cenário — um deslocamento uniforme na log-chance
+  da direita — mas agora <b>calibrado pela história</b>: os ventos reais de 2014, 2018 e
+  2022 ficaram entre 0,1 e 0,36 em módulo, e os três sopraram contra o incumbente. Em
+  2026 a incumbência é da esquerda; se o padrão se repetir, os cenários relevantes são os
+  positivos da régua. A tabela converte cada hipótese em resultado nacional, já sobre a
   demografia de 2026:</p>
   <div class="fig">
     <h3>Régua de cenários</h3>
     <div id="tab-cen"></div>
-    <div class="cap">Deslocamentos de ±0,1 em log-chance ≈ ±2,3 pontos nos válidos. O backfill 2010–2018 (próxima fase) transforma esse botão em estimativa.</div>
+    <div class="cap">Deslocamentos de ±0,1 em log-chance ≈ ±2,3 pontos nos válidos. Linhas marcadas indicam onde caíram os ventos reais das três últimas transições.</div>
   </div>
 </section>
 
@@ -216,7 +269,11 @@ footer p{margin:.35em 0}
   municipais; renda e raça são do entorno do local de votação; o vínculo Voronoi aproxima a área
   de captação real. · <b>Ocupação é do Censo 2010</b> — o 2022 ainda não publicou atividade por
   município. · <b>Drop-one é marginal:</b> eixos correlacionados dividem crédito; a soma das
-  perdas (~30%) é bem menor que a explicação conjunta (62%). · <b>2026 ≠ Lula × Bolsonaro
+  perdas (~30%) é bem menor que a explicação conjunta (62%). · <b>“Direita” muda de rosto:</b>
+  em 2010/2014 o polo é o PSDB (Serra, Aécio); em 2018/2022, Bolsonaro — parte da deriva dos
+  coeficientes é troca de candidato, não do eleitorado. · <b>Entorno interpolado:</b> nos anos
+  antigos renda, raça e rural são a mistura linear dos Censos 2010 e 2022 (w = 0 / 0,35 / 0,69),
+  com o eleitorado real do TSE de cada ano por seção. · <b>2026 ≠ Lula × Bolsonaro
   necessariamente:</b> a projeção lê “um duelo esquerda × direita com o mesmo mapa de
   comportamento de 2022”.</p>
 </section>
@@ -248,7 +305,7 @@ const NOMES = {
   pct_1624:"% eleitores 16–24", pct_2539:"% eleitores 25–39", pct_60m:"% eleitores 60+",
   log_pop_mun:"log população · mun.", em_rm:"região metropolitana",
   hierarquia_num:"hierarquia urbana", pct_rural:"% pop. rural · entorno",
-  log_renda:"log renda mediana · entorno", pct_fem:"% mulheres"
+  log_renda:"log renda média · entorno", pct_fem:"% mulheres"
 };
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const fmt = (x,d=1) => x.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -406,6 +463,70 @@ document.getElementById("t-proj").textContent = fmt(dproj,1)+"pp";
   });
 })();
 
+/* ---------- backfill: fit por ciclo ---------- */
+(function(){
+  if(!DATA.comp) return;
+  const F=DATA.comp.fit, anos=["2010","2014","2018","2022"];
+  const dupla={2010:"Dilma × Serra",2014:"Dilma × Aécio",2018:"Haddad × Bolsonaro",2022:"Lula × Bolsonaro"};
+  let h="<table><tr><th>ciclo</th><th>esquerda (real)</th><th>deviance explicada</th><th>R² válidos</th><th>MAE</th></tr>";
+  for(const a of anos){const f=F[a];
+    h+=`<tr><td>${a} · ${dupla[a]}</td><td class="num">${fmt(100*f.esq_validos_real,1)}%</td><td class="num">${fmt(100*f.dev_expl,0)}%</td><td class="num">${fmt(f.r2_validos,2).replace(".",",")}</td><td class="num">±${fmt(100*f.mae_validos,1)}pp</td></tr>`;}
+  document.getElementById("tab-fit").innerHTML=h+"</table>";
+})();
+
+/* ---------- backfill: deriva dos coeficientes (small multiples) ---------- */
+(function(){
+  if(!DATA.comp) return;
+  const D=DATA.comp.deriva, anos=["2010","2014","2018","2022"];
+  const curados=["pct_branca","pct_evangelica","pct_fund","pct_sup",
+                 "reg_NE","vab_agro","pct_ocup_comercio","log_renda"];
+  const escolhidos=curados.filter(k=>D[k]).map(k=>({k,vals:anos.map(a=>D[k][a])}));
+  const lim=Math.max(...escolhidos.map(e=>Math.max(...e.vals.map(Math.abs))));
+  const wrap=document.getElementById("fig-deriva");
+  wrap.style.cssText="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px";
+  for(const e of escolhidos){
+    const W=200,H=120,pl=8,pr=44,pt=16,pb=18;
+    const sx=i=>pl+i*(W-pl-pr)/3, sy=v=>pt+(1-(v+lim)/(2*lim))*(H-pt-pb);
+    const cel=document.createElement("div");
+    const tt=document.createElement("div");
+    tt.style.cssText="font-size:12.5px;color:var(--ink2);margin-bottom:2px";
+    tt.textContent=NOMES[e.k]||e.k; cel.appendChild(tt);
+    const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},cel);
+    el("line",{x1:pl,y1:sy(0),x2:W-pr+14,y2:sy(0),stroke:css("--grid")},svg);
+    let dPath="";
+    e.vals.forEach((v,i)=>{dPath+=(i?"L":"M")+sx(i)+" "+sy(v);});
+    el("path",{d:dPath,fill:"none",stroke:css("--muted"),"stroke-width":1.8},svg);
+    e.vals.forEach((v,i)=>{
+      const dot=el("circle",{cx:sx(i),cy:sy(v),r:4,fill:v>0?css("--lula"):css("--bolso")},svg);
+      hover(dot,`<b>${NOMES[e.k]||e.k}</b><br>${anos[i]}: ${v>0?"+":"−"}${fmt(Math.abs(v),2)} p/ ${v>0?"esquerda":"direita"}`);
+      const lb=el("text",{x:sx(i),y:H-4,"text-anchor":"middle","font-size":10,fill:css("--muted"),class:"num"},svg);
+      lb.textContent="'"+anos[i].slice(2);
+    });
+    const fim=e.vals[3];
+    const tv=el("text",{x:sx(3)+8,y:sy(fim)+4,"font-size":11.5,class:"num","font-weight":700,fill:css("--ink")},svg);
+    tv.textContent=(fim>0?"+":"−")+fmt(Math.abs(fim),2);
+    wrap.appendChild(cel);
+  }
+})();
+
+/* ---------- backfill: ventos ---------- */
+(function(){
+  if(!DATA.comp) return;
+  const T=DATA.comp.transicoes;
+  let h="<table><tr><th>transição</th><th>contexto</th><th>demografia prevê</th><th>real</th><th>erro</th><th>vento (log-chance)</th></tr>";
+  for(const [k,t] of Object.entries(T)){
+    h+=`<tr><td>${k.replace("->"," → ")}</td><td style="text-align:left;font-size:13px">${t.contexto}</td>`+
+       `<td class="num">${fmt(100*t.prev_demografia,1)}%</td><td class="num">${fmt(100*t.real,1)}%</td>`+
+       `<td class="num">${t.erro_pp>0?"+":"−"}${fmt(Math.abs(t.erro_pp),1)}pp</td>`+
+       `<td class="num">${t.vento_logodds_direita>0?"+":"−"}${fmt(Math.abs(t.vento_logodds_direita),2)} p/ ${t.vento_logodds_direita>0?"direita":"esquerda"}</td></tr>`;
+  }
+  document.getElementById("tab-vento").innerHTML=h+"</table>";
+  const errs=Object.values(T).map(t=>Math.abs(t.erro_pp));
+  const ing=Object.values(T).map(t=>Math.abs(t.erro_ingenuo_pp));
+  document.getElementById("cap-vento").textContent =
+    `Share da esquerda nos válidos. Erro médio da previsão demográfica: ${fmt(errs.reduce((a,b)=>a+b,0)/errs.length,1)}pp; repetir o resultado nacional anterior erraria ${fmt(ing.reduce((a,b)=>a+b,0)/ing.length,1)}pp.`;
+})();
+
 /* ---------- projeção: passos ---------- */
 (function(){
   const P=DATA.proj, b=100*P.base_2022.validos_esq;
@@ -445,9 +566,12 @@ document.getElementById("t-proj").textContent = fmt(dproj,1)+"pp";
   const nomes={"-0.30":"vento forte contra o governo","-0.20":"vento contra o governo",
     "-0.10":"vento leve contra","+0.00":"neutro — só a demografia",
     "+0.10":"vento leve a favor","+0.20":"vento a favor do governo","+0.30":"vento forte a favor"};
+  const ventos = DATA.comp ? Object.entries(DATA.comp.transicoes).map(([k,t]) =>
+    ({ano:k.slice(-4), v:t.vento_logodds_direita})) : [];
   for(const [k,v] of Object.entries(C)){
-    const e=100*v.validos_esq;
-    h+=`<tr${k==="+0.00"?' class="destaque"':""}><td>${k.replace("-","−")} · ${nomes[k]||""}</td><td class="num">${fmt(e,1)}%</td><td style="text-align:left">${e>=50?"esquerda na frente":"direita na frente"}</td></tr>`;
+    const e=100*v.validos_esq, kn=parseFloat(k);
+    const marca=ventos.filter(x=>Math.abs(x.v-kn)<=0.06).map(x=>`≈ vento real de ${x.ano}`).join(" · ");
+    h+=`<tr${k==="+0.00"?' class="destaque"':""}><td>${k.replace("-","−")} · ${nomes[k]||""}</td><td class="num">${fmt(e,1)}%</td><td style="text-align:left">${e>=50?"esquerda na frente":"direita na frente"}${marca?" · <b>"+marca+"</b>":""}</td></tr>`;
   }
   document.getElementById("tab-cen").innerHTML=h+"</table>";
 })();

@@ -40,7 +40,9 @@ EIXOS = {
 CLASSES = ["lula", "bolsonaro", "nenhum"]
 
 
-def monta_xy(base: pd.DataFrame):
+def monta_xy(base: pd.DataFrame, mu=None, sd=None):
+    """Se mu/sd vierem (padrao de outro ano), padroniza NELE -- e assim que os
+    coeficientes de anos diferentes ficam na mesma unidade (+1 dp de 2022)."""
     base = base.copy()
     for reg in ["N", "NE", "CO", "S"]:
         base[f"reg_{reg}"] = (base["regiao"] == reg).astype(float)
@@ -49,9 +51,12 @@ def monta_xy(base: pd.DataFrame):
     X = X.fillna(X.median(numeric_only=True))
 
     w_aptos = base["aptos"].to_numpy(float)
-    mu = (X.to_numpy() * w_aptos[:, None]).sum(0) / w_aptos.sum()
-    sd = np.sqrt(((X.to_numpy() - mu) ** 2 * w_aptos[:, None]).sum(0) / w_aptos.sum())
-    sd[sd == 0] = 1.0
+    if mu is None:
+        mu = (X.to_numpy() * w_aptos[:, None]).sum(0) / w_aptos.sum()
+        sd = np.sqrt(((X.to_numpy() - mu) ** 2 * w_aptos[:, None]).sum(0) / w_aptos.sum())
+        sd[sd == 0] = 1.0
+    else:
+        mu, sd = np.asarray(mu), np.asarray(sd)
     Xz = (X.to_numpy() - mu) / sd
 
     contagens = np.c_[base["lula"], base["bolsonaro"],
@@ -81,9 +86,15 @@ def metricas(m, Xz, contagens):
 
 
 def main() -> int:
-    base = pd.read_parquet(SAIDA / "base_2022.parquet")
-    Xz, contagens, cols, mu, sd = monta_xy(base)
-    print(f"{len(base)} secoes, {len(cols)} covariaveis")
+    ano = int(sys.argv[1]) if len(sys.argv) > 1 else 2022
+    base = pd.read_parquet(SAIDA / f"base_{ano}.parquet")
+    ref = (None, None)
+    if ano != 2022:      # anos antigos herdam a padronizacao de 2022 (comparabilidade)
+        with open(SAIDA / "modelo_2022.json", encoding="utf-8") as fh:
+            m22 = json.load(fh)
+        ref = (m22["mu"], m22["sd"])
+    Xz, contagens, cols, mu, sd = monta_xy(base, *ref)
+    print(f"{ano}: {len(base)} secoes, {len(cols)} covariaveis")
 
     t0 = time.time()
     m = ajusta(Xz, contagens)
@@ -130,15 +141,15 @@ def main() -> int:
         "por_uf": por_uf, "drop_one": drop,
         "shares_globais": (contagens.sum(0) / contagens.sum()).tolist(),
     }
-    with open(SAIDA / "modelo_2022.json", "w", encoding="utf-8") as fh:
+    with open(SAIDA / f"modelo_{ano}.json", "w", encoding="utf-8") as fh:
         json.dump(saida, fh, ensure_ascii=False, indent=1)
 
     pred = base[["uf", "cd_municipio_tse", "zona", "secao", "aptos"]].copy()
     for i, c in enumerate(CLASSES):
         pred[f"p_{c}"] = p[:, i]
         pred[f"sh_{c}"] = contagens[:, i] / aptos
-    pred.to_parquet(SAIDA / "pred_2022.parquet", index=False)
-    print("gravados modelo_2022.json e pred_2022.parquet")
+    pred.to_parquet(SAIDA / f"pred_{ano}.parquet", index=False)
+    print(f"gravados modelo_{ano}.json e pred_{ano}.parquet")
     return 0
 
 

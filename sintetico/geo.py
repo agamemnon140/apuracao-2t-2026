@@ -34,10 +34,10 @@ def norm_nome(s) -> str:
     return " ".join(s.upper().replace("-", " ").replace("'", "").split())
 
 
-def carrega_locais() -> pd.DataFrame:
-    z = zipfile.ZipFile(BRUTO_TSE / "2022" / "eleitorado_local_votacao_2022.zip")
+def carrega_locais(ano: int = 2022) -> pd.DataFrame:
+    z = zipfile.ZipFile(BRUTO_TSE / str(ano) / f"eleitorado_local_votacao_{ano}.zip")
     vistos = {}
-    with z.open("eleitorado_local_votacao_2022.csv") as fh:
+    with z.open(f"eleitorado_local_votacao_{ano}.csv") as fh:
         rd = csv.DictReader(io.TextIOWrapper(fh, encoding="latin-1"), delimiter=";")
         for r in rd:
             if r["NR_TURNO"] != "2":
@@ -101,20 +101,28 @@ def pondera(setores: pd.DataFrame) -> dict:
             "pct_branca": wmean("pct_branca", "raca_val") if rv else np.nan,
             "pct_preta": wmean("pct_preta", "raca_val") if rv else np.nan,
             "pct_parda": wmean("pct_parda", "raca_val") if rv else np.nan,
-            "renda_mediana": wmean("renda_mediana", "responsaveis") if resp else np.nan,
+            "renda_media": wmean("renda_media", "responsaveis") if resp else np.nan,
             "pct_rural": float(setores.loc[setores["rural"] == 1, "pop"].sum() / pop) if pop else np.nan}
 
 
-def main() -> int:
-    setores = pd.read_parquet(SAIDA / "setores_2022.parquet")
-    cent = pd.read_parquet(SAIDA / "setor_centroides_2022.parquet")
+ATRIBS = ["pop_entorno", "pct_branca", "pct_preta", "pct_parda", "renda_media", "pct_rural"]
+
+
+def carrega_setores(vintage: int) -> pd.DataFrame:
+    setores = pd.read_parquet(SAIDA / f"setores_{vintage}.parquet")
+    cent = pd.read_parquet(SAIDA / f"setor_centroides_{vintage}.parquet")
     setores = setores.merge(cent, on="cd_setor", how="left")
     setores["responsaveis"] = pd.to_numeric(setores["responsaveis"], errors="coerce").fillna(0)
+    setores["renda_media"] = pd.to_numeric(setores["renda_media"], errors="coerce")
+    return setores
 
-    locais = carrega_locais()
-    liga = crosswalk(locais, setores)
-    locais = locais.merge(liga, on="cd_municipio_tse", how="left")
 
+def vincula(setores: pd.DataFrame, locais: pd.DataFrame):
+    """Voronoi por municipio: atributos de entorno por local + agregado municipal.
+
+    `locais` precisa das colunas uf, cd_municipio_tse, zona, nr_local, lat, lon, cd_mun.
+    Devolve (df por local, mun_df).
+    """
     # fallback municipal (e atributo do municipio para a base)
     mun_rows = []
     for cd_mun, grupo in setores.groupby("cd_mun"):
@@ -152,9 +160,7 @@ def main() -> int:
             attrs = atribuidos.get(i_loc)
             if attrs is None:
                 n_fallback += 1
-                attrs = {k: fb.get(k, np.nan) for k in
-                         ["pop_entorno", "pct_branca", "pct_preta", "pct_parda",
-                          "renda_mediana", "pct_rural"]}
+                attrs = {k: fb.get(k, np.nan) for k in ATRIBS}
                 attrs["origem"] = "municipio"
             else:
                 attrs["origem"] = "voronoi"
@@ -166,7 +172,15 @@ def main() -> int:
     print(f"locais atribuidos: {len(df)} | fallback municipal: {n_fallback} "
           f"| coordenada descartada (>30km): {n_longe}")
     print(f"cobertura voronoi: {100 * (df['origem'] == 'voronoi').mean():.1f}% dos locais")
+    return df, mun_df
 
+
+def main() -> int:
+    setores = carrega_setores(2022)
+    locais = carrega_locais()
+    liga = crosswalk(locais, setores)
+    locais = locais.merge(liga, on="cd_municipio_tse", how="left")
+    df, mun_df = vincula(setores, locais)
     df.to_parquet(SAIDA / "locais_atributos_2022.parquet", index=False)
     mun_df = mun_df.merge(liga, on="cd_mun", how="left")
     mun_df.to_parquet(SAIDA / "municipio_atributos_2022.parquet", index=False)
