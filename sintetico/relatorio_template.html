@@ -1,0 +1,454 @@
+<title>Voto Sintético 2022</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --ground:#faf9f6; --surface:#ffffff; --ink:#14130f; --ink2:#55534b; --muted:#8b887c;
+  --grid:#e5e3da; --baseline:#c6c4b8; --hair:rgba(20,19,15,.10);
+  --accent:#a07908; --accent-soft:#efe6c8;
+  --lula:#e34948; --bolso:#2a78d6; --neutro:#898781;
+  --lula-soft:rgba(227,73,72,.14); --bolso-soft:rgba(42,120,214,.14);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#12120f; --surface:#1b1b18; --ink:#f2f1ea; --ink2:#b9b7ab; --muted:#8b887c;
+    --grid:#2c2c28; --baseline:#3a3a35; --hair:rgba(255,255,255,.10);
+    --accent:#d9ab27; --accent-soft:#3a3113;
+    --lula:#e66767; --bolso:#3987e5;
+    --lula-soft:rgba(230,103,103,.16); --bolso-soft:rgba(57,135,229,.16);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12120f; --surface:#1b1b18; --ink:#f2f1ea; --ink2:#b9b7ab; --muted:#8b887c;
+  --grid:#2c2c28; --baseline:#3a3a35; --hair:rgba(255,255,255,.10);
+  --accent:#d9ab27; --accent-soft:#3a3113;
+  --lula:#e66767; --bolso:#3987e5;
+  --lula-soft:rgba(230,103,103,.16); --bolso-soft:rgba(57,135,229,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font:16px/1.6 "Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;}
+main{max-width:900px;margin:0 auto;padding:48px 24px 96px}
+h1,h2,h3{font-family:"Archivo","Source Sans 3",sans-serif;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,6vw,54px);font-weight:800;letter-spacing:-.015em}
+h2{font-size:clamp(22px,3.4vw,30px);font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+h3{font-size:17px;font-weight:700;margin:0 0 4px}
+p{margin:.6em 0;max-width:70ch}
+a{color:var(--accent)}
+.eyebrow{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.stand{font-size:18px;color:var(--ink2);max-width:64ch}
+header{padding-bottom:8px}
+section{margin-top:56px}
+section>p{color:var(--ink)}
+.note{color:var(--ink2);font-size:14.5px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:28px 0 0}
+.tile{background:var(--surface);border:1px solid var(--hair);border-radius:6px;padding:16px 18px}
+.tile .v{font-family:"Archivo",sans-serif;font-weight:800;font-size:30px;letter-spacing:-.01em}
+.tile .l{font-size:13px;color:var(--ink2);margin-top:2px;line-height:1.35}
+.fig{background:var(--surface);border:1px solid var(--hair);border-radius:6px;
+  padding:18px 18px 12px;margin:18px 0;overflow-x:auto}
+.fig .cap{font-size:13px;color:var(--muted);margin-top:8px}
+.fig h3{margin-bottom:10px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:2px 0 10px}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg text{font-family:"Source Sans 3",system-ui,sans-serif}
+.num{font-variant-numeric:tabular-nums}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);
+  padding:12px 16px;border-radius:0 6px 6px 0;margin:18px 0;max-width:72ch}
+.callout p{margin:.3em 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child{text-align:left}
+th{font-family:"Archivo",sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:700}
+tr.destaque td{font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.chip{font-size:13px;border:1px solid var(--hair);background:var(--surface);
+  border-radius:99px;padding:4px 12px;color:var(--ink2)}
+.chip b{color:var(--ink);font-weight:600}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--ground);
+  font-size:13px;padding:6px 10px;border-radius:5px;opacity:0;transition:opacity .12s;z-index:9;
+  max-width:260px;line-height:1.4}
+details{margin:14px 0}
+summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14.5px}
+footer{margin-top:72px;padding-top:18px;border-top:1px solid var(--grid);
+  font-size:13.5px;color:var(--muted)}
+footer p{margin:.35em 0}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<main>
+<header>
+  <div class="eyebrow">apuração-2026 · série sintético · 2º turno 2022</div>
+  <h1>Voto Sintético</h1>
+  <p class="stand">Quanto do voto brasileiro dá para reconstruir só com demografia?
+  Um logit multinomial sobre <span class="num">470.481</span> seções eleitorais decompõe o
+  2º turno de 2022 — Lula, Bolsonaro e <em>nenhum</em> (brancos, nulos e abstenção) — em
+  raça, religião, região, idade, escolaridade, renda, ocupação e território, e depois
+  projeta o que a deriva demográfica faz com 2026.</p>
+  <div class="tiles">
+    <div class="tile"><div class="v num" id="t-dev">—</div><div class="l">da variação entre seções explicada (deviance vs. modelo saturado)</div></div>
+    <div class="tile"><div class="v num" id="t-r2">—</div><div class="l">R² do share de Lula nos válidos, seção a seção</div></div>
+    <div class="tile"><div class="v num" id="t-mae">—</div><div class="l">erro absoluto médio por seção (share nos válidos)</div></div>
+    <div class="tile"><div class="v num" id="t-proj">—</div><div class="l">efeito projetado da deriva demográfica 2022 → 2026 sobre a esquerda</div></div>
+  </div>
+</header>
+
+<section>
+  <h2>Como o sintético é montado</h2>
+  <p>Cada seção eleitoral vira uma linha com três desfechos que somam 100% dos aptos —
+  votos de Lula, votos de Bolsonaro e <em>nenhum</em> — e um vetor demográfico costurado
+  de três resoluções:</p>
+  <div class="chips">
+    <span class="chip"><b>seção</b> · sexo, idade, escolaridade (perfil do eleitorado, TSE)</span>
+    <span class="chip"><b>entorno</b> · renda, raça, urbano/rural (Censo 2022 por setor)</span>
+    <span class="chip"><b>município</b> · religião, ocupação, PIB, porte (IBGE)</span>
+  </div>
+  <p>O elo do meio é geográfico: cada um dos <span class="num">92.254</span> locais de votação
+  com coordenada é ligado aos setores censitários mais próximos dele no mesmo município
+  (partição de Voronoi sobre <span class="num">468.099</span> setores), e a seção herda a
+  demografia desse entorno ponderada por população. 92,7% dos locais têm vínculo fino;
+  o resto herda a média municipal.</p>
+  <p class="note">Sanidade: reagregando as previsões, o modelo devolve exatamente o resultado
+  oficial — Lula com 50,90% dos válidos e abstenção de 20,58% — porque o logit multinomial
+  ponderado preserva os totais por construção. O teste real está na variação <em>entre</em>
+  seções, medida nos números acima.</p>
+</section>
+
+<section>
+  <h2>O que empurra o voto para cada lado</h2>
+  <p>Coeficientes do modelo cheio, em log-chance de Lula vs. Bolsonaro por
+  <b>+1 desvio-padrão</b> de cada variável, com todas as outras seguradas. É o efeito
+  <em>marginal</em>: raça, renda e escolaridade andam juntas no território, e cada barra
+  mostra o que sobra para aquela variável depois de descontar as demais.</p>
+  <div class="fig">
+    <h3>Empurrão marginal no duelo</h3>
+    <div class="legend"><span><span class="sw" style="background:var(--bolso)"></span>para Bolsonaro</span>
+      <span><span class="sw" style="background:var(--lula)"></span>para Lula</span></div>
+    <div id="fig-coef"></div>
+    <div class="cap">Barras = variação na log-chance Lula:Bolsonaro por +1 dp da variável. As 14 maiores; a tabela completa está abaixo.</div>
+  </div>
+  <div class="fig">
+    <h3>O que prevê o “nenhum”</h3>
+    <div id="fig-nenhum"></div>
+    <div class="cap">Log-chance de brancos+nulos+abstenção vs. a média dos dois candidatos, por +1 dp. Idade domina: seções mais velhas <em>e</em> mais jovens abstêm mais.</div>
+  </div>
+  <details><summary>Tabela completa de coeficientes</summary><div id="tab-coef"></div></details>
+</section>
+
+<section>
+  <h2>Quanto cada eixo importa</h2>
+  <p>Removendo um eixo inteiro e reajustando o modelo, quanto da explicação some?
+  (Percentual da deviance explicada perdida — uma leitura <em>marginal</em>, que
+  reparte só o que cada eixo tem de exclusivo.)</p>
+  <div class="fig">
+    <h3>Perda por remoção (drop-one)</h3>
+    <div id="fig-drop"></div>
+  </div>
+  <div class="callout">
+    <p><b>VAB × ocupação:</b> das duas medidas de “de que vive a cidade”, a composição de
+    <em>ocupação</em> das pessoas (Censo 2010) explica ~3× mais que a composição do
+    <em>PIB</em> (VAB 2021). O que a pessoa faz prevê melhor que o que a economia produz.</p>
+    <p><b>Renda quase zera</b> depois de controlar raça, escolaridade e região — a renda do
+    entorno em si carrega pouca informação própria; e <b>sexo não separa seções</b>
+    (toda seção tem ~52% de mulheres; isso só se testa com dado individual).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Onde a demografia acerta — e onde não dá conta</h2>
+  <p>Por UF, o share de Lula nos válidos: oficial vs. o que o sintético reconstrói
+  só com demografia.</p>
+  <div class="fig">
+    <h3>Reconstrução por UF</h3>
+    <div class="legend"><span><span class="sw" style="background:var(--ink)"></span>oficial</span>
+      <span><span class="sw" style="border:2px solid var(--accent);background:transparent"></span>sintético</span></div>
+    <div id="fig-uf"></div>
+    <div class="cap">Ordenado pelo resultado oficial. As setas marcam o erro do modelo.</div>
+  </div>
+  <p>O padrão do erro é geográfico e conta uma história: <b>Roraima, Acre e Rondônia</b>
+  votaram ~10–20 pontos mais bolsonaristas do que sua demografia sugere — o cinturão da
+  fronteira agropecuária carrega um comportamento político que renda, raça e religião não
+  capturam. No extremo oposto, o Nordeste vota mais Lula do que o previsto pela demografia
+  pura. É a medida do que fica <em>fora</em> de um modelo demográfico: identidade regional,
+  economia local, máquina política.</p>
+  <div class="fig">
+    <h3>Município a município</h3>
+    <div class="legend"><span>cada ponto = 1 município (área ∝ eleitorado) · diagonal = acerto perfeito</span></div>
+    <canvas id="fig-disp" style="width:100%;height:460px"></canvas>
+    <div class="cap num" id="disp-cap">Passe o mouse para inspecionar.</div>
+  </div>
+</section>
+
+<section>
+  <h2>2026: o que a demografia sozinha faz</h2>
+  <p>Congelando o comportamento de 2022 (os coeficientes) e trocando só a composição do
+  eleitorado — o cadastro real de agosto/2026 para sexo, idade e escolaridade, e a
+  tendência municipal 2010→2022 extrapolada para religião — o duelo esquerda × direita
+  se move:</p>
+  <div class="fig">
+    <h3>Deriva demográfica, decomposta</h3>
+    <div id="fig-proj"></div>
+    <div class="cap">Share da esquerda nos válidos, comportamento fixo em 2022. Envelhecimento + escolarização do cadastro e avanço evangélico, cada um isolado e combinados.</div>
+  </div>
+  <p>A deriva é toda numa direção: <b>−2,0 pontos</b> para a esquerda até outubro de 2026.
+  O cadastro envelheceu (60+ sobe 2,3pp) — e como as seções mais velhas abstêm mais e o
+  miolo de idade pende ligeiramente Bolsonaro, o efeito líquido é contra a esquerda —
+  e os evangélicos seguem crescendo (+1,6pp na extrapolação municipal).</p>
+  <h3 style="margin-top:26px">E a incumbência?</h3>
+  <p>Com um ciclo só, o efeito de ser governo <b>não é estimável</b> — não há variação para
+  medir. Ele entra como cenário declarado: um deslocamento uniforme na log-chance da
+  direita. A régua abaixo converte cada hipótese em resultado nacional, já sobre a
+  demografia de 2026:</p>
+  <div class="fig">
+    <h3>Régua de cenários</h3>
+    <div id="tab-cen"></div>
+    <div class="cap">Deslocamentos de ±0,1 em log-chance ≈ ±2,3 pontos nos válidos. O backfill 2010–2018 (próxima fase) transforma esse botão em estimativa.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Ressalvas de leitura</h2>
+  <p class="note"><b>Ecologia, não indivíduo.</b> Os coeficientes descrevem <em>seções</em>, não
+  pessoas — “seções mais evangélicas votam mais Bolsonaro” não é a mesma coisa que “evangélicos
+  votam Bolsonaro” (falácia ecológica). · <b>Resoluções misturadas.</b> Religião e ocupação são
+  municipais; renda e raça são do entorno do local de votação; o vínculo Voronoi aproxima a área
+  de captação real. · <b>Ocupação é do Censo 2010</b> — o 2022 ainda não publicou atividade por
+  município. · <b>Drop-one é marginal:</b> eixos correlacionados dividem crédito; a soma das
+  perdas (~30%) é bem menor que a explicação conjunta (62%). · <b>2026 ≠ Lula × Bolsonaro
+  necessariamente:</b> a projeção lê “um duelo esquerda × direita com o mesmo mapa de
+  comportamento de 2022”.</p>
+</section>
+
+<footer>
+  <p>Fontes: TSE dados abertos (votação e detalhe por seção, perfil do eleitorado por seção,
+  locais de votação, eleitorado atual ago/2026) · IBGE (Censo 2022: agregados por setor,
+  renda do responsável, religiões; Censo 2010: religião e ocupação; PIB dos Municípios 2021;
+  malha de setores 2022).</p>
+  <p>Pipeline reproduzível em <code>sintetico/</code> no repositório apuracao-2026.
+  Gerado em agosto/2026.</p>
+</footer>
+</main>
+<div id="tip" role="status"></div>
+
+<script>
+const DATA = /*__DADOS__*/null;
+
+const NOMES = {
+  pct_branca:"% brancos · entorno", pct_preta:"% pretos · entorno",
+  reg_NE:"Nordeste", reg_N:"Norte", reg_CO:"Centro-Oeste", reg_S:"Sul",
+  pct_evangelica:"% evangélicos · mun.", pct_sem_religiao:"% sem religião · mun.",
+  pct_fund:"% até fund. incompleto", pct_sup:"% ensino superior",
+  pct_ocup_comercio:"% ocupados: comércio · mun. 2010",
+  pct_ocup_bens:"% ocupados: indústria · mun. 2010",
+  pct_ocup_agro:"% ocupados: agro · mun. 2010",
+  vab_agro:"peso do agro no PIB · mun.", vab_industria:"peso da indústria no PIB · mun.",
+  vab_adm:"peso da adm. pública no PIB · mun.",
+  pct_1624:"% eleitores 16–24", pct_2539:"% eleitores 25–39", pct_60m:"% eleitores 60+",
+  log_pop_mun:"log população · mun.", em_rm:"região metropolitana",
+  hierarquia_num:"hierarquia urbana", pct_rural:"% pop. rural · entorno",
+  log_renda:"log renda mediana · entorno", pct_fem:"% mulheres"
+};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (x,d=1) => x.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const S = "http://www.w3.org/2000/svg";
+const el = (tag,attrs,parent) => {const e=document.createElementNS(S,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]); if(parent)parent.appendChild(e); return e;};
+const tip = document.getElementById("tip");
+function hover(node, html){
+  node.addEventListener("mousemove", ev => {tip.innerHTML=html; tip.style.opacity=1;
+    tip.style.left=Math.min(ev.clientX+14, innerWidth-280)+"px"; tip.style.top=(ev.clientY+14)+"px";});
+  node.addEventListener("mouseleave", () => tip.style.opacity=0);
+}
+
+/* ---------- tiles ---------- */
+document.getElementById("t-dev").textContent = fmt(100*DATA.dev_expl,0)+"%";
+document.getElementById("t-r2").textContent = fmt(DATA.r2_validos,2).replace(".",",");
+document.getElementById("t-mae").textContent = "±"+fmt(100*DATA.mae_validos,1)+"pp";
+const dproj = 100*(DATA.proj.proj_2026.validos_esq - DATA.proj.base_2022.validos_esq);
+document.getElementById("t-proj").textContent = fmt(dproj,1)+"pp";
+
+/* ---------- coeficientes L vs B ---------- */
+(function(){
+  const ent = Object.entries(DATA.coefs).sort((a,b)=>Math.abs(b[1].lb)-Math.abs(a[1].lb)).slice(0,14);
+  const W=820, rowH=30, padL=270, padR=60, H=ent.length*rowH+26;
+  const max=Math.max(...ent.map(e=>Math.abs(e[1].lb)));
+  const sc=(W-padL-padR-110)/(2*max), x0=padL+(W-padL-padR)/2;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},document.getElementById("fig-coef"));
+  el("line",{x1:x0,y1:6,x2:x0,y2:H-20,stroke:css("--baseline")},svg);
+  ent.forEach(([k,v],i)=>{
+    const y=14+i*rowH, val=v.lb, w=Math.abs(val)*sc;
+    const bar=el("rect",{x:val>0?x0:x0-w,y:y-8,width:Math.max(w,1),height:16,rx:4,
+      fill:val>0?css("--lula"):css("--bolso")},svg);
+    const t=el("text",{x:padL-10,y:y+4,"text-anchor":"end","font-size":13,fill:css("--ink2")},svg);
+    t.textContent=NOMES[k]||k;
+    const tv=el("text",{x:val>0?x0+w+8:x0-w-8,y:y+4,"font-size":12.5,class:"num",
+      "text-anchor":val>0?"start":"end",fill:css("--ink")},svg);
+    tv.textContent=(val>0?"+":"−")+fmt(Math.abs(val),2);
+    hover(bar,`<b>${NOMES[k]||k}</b><br>${val>0?"+":"−"}${fmt(Math.abs(val),3)} log-chance ${val>0?"Lula":"Bolsonaro"} por +1 dp`);
+  });
+})();
+
+/* ---------- nenhum ---------- */
+(function(){
+  const ent = Object.entries(DATA.coefs).sort((a,b)=>Math.abs(b[1].nen)-Math.abs(a[1].nen)).slice(0,6);
+  const W=820, rowH=28, padL=270, padR=60, H=ent.length*rowH+20;
+  const max=Math.max(...ent.map(e=>Math.abs(e[1].nen)));
+  const sc=(W-padL-padR-110)/(2*max), x0=padL+(W-padL-padR)/2;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},document.getElementById("fig-nenhum"));
+  el("line",{x1:x0,y1:4,x2:x0,y2:H-16,stroke:css("--baseline")},svg);
+  ent.forEach(([k,v],i)=>{
+    const y=12+i*rowH, val=v.nen, w=Math.abs(val)*sc;
+    const bar=el("rect",{x:val>0?x0:x0-w,y:y-7,width:Math.max(w,1),height:14,rx:4,fill:css("--neutro")},svg);
+    const t=el("text",{x:padL-10,y:y+4,"text-anchor":"end","font-size":13,fill:css("--ink2")},svg);
+    t.textContent=NOMES[k]||k;
+    const tv=el("text",{x:val>0?x0+w+8:x0-w-8,y:y+4,"font-size":12.5,class:"num",
+      "text-anchor":val>0?"start":"end",fill:css("--ink")},svg);
+    tv.textContent=(val>0?"+":"−")+fmt(Math.abs(val),2);
+    hover(bar,`<b>${NOMES[k]||k}</b><br>${val>0?"mais":"menos"} “nenhum” por +1 dp`);
+  });
+})();
+
+/* ---------- tabela coeficientes ---------- */
+(function(){
+  const rows = Object.entries(DATA.coefs).sort((a,b)=>Math.abs(b[1].lb)-Math.abs(a[1].lb));
+  let h="<table><tr><th>variável</th><th>Lula vs. Bolsonaro</th><th>“nenhum”</th></tr>";
+  rows.forEach(([k,v])=>{h+=`<tr><td>${NOMES[k]||k}</td><td class="num">${v.lb>0?"+":"−"}${fmt(Math.abs(v.lb),3)}</td><td class="num">${v.nen>0?"+":"−"}${fmt(Math.abs(v.nen),3)}</td></tr>`;});
+  document.getElementById("tab-coef").innerHTML=h+"</table>";
+})();
+
+/* ---------- drop-one ---------- */
+(function(){
+  const NM={regiao:"região",religiao:"religião",idade:"idade",raca:"raça",
+    escolaridade:"escolaridade",industria_ocup:"ocupação (Censo 2010)",
+    industria_vab:"VAB / PIB (2021)",porte:"porte do município",
+    urbano_rural:"urbano × rural",renda:"renda",sexo:"sexo"};
+  const ent=Object.entries(DATA.drop).sort((a,b)=>b[1]-a[1]);
+  const W=820,rowH=28,padL=200,padR=70,H=ent.length*rowH+16;
+  const max=Math.max(...ent.map(e=>e[1]));
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},document.getElementById("fig-drop"));
+  ent.forEach(([k,v],i)=>{
+    const y=12+i*rowH,w=Math.max(v/max*(W-padL-padR),1.5);
+    const bar=el("rect",{x:padL,y:y-7,width:w,height:14,rx:4,fill:css("--accent")},svg);
+    const t=el("text",{x:padL-10,y:y+4,"text-anchor":"end","font-size":13,fill:css("--ink2")},svg);
+    t.textContent=NM[k]||k;
+    const tv=el("text",{x:padL+w+8,y:y+4,"font-size":12.5,class:"num",fill:css("--ink")},svg);
+    tv.textContent=fmt(v,1)+"%";
+    hover(bar,`<b>${NM[k]||k}</b><br>remoção perde ${fmt(v,1)}% da deviance explicada`);
+  });
+})();
+
+/* ---------- UF dumbbell ---------- */
+(function(){
+  const ent=Object.entries(DATA.por_uf).sort((a,b)=>b[1].real-a[1].real);
+  const W=820,rowH=24,padL=52,padR=24,H=ent.length*rowH+40;
+  const xmin=15,xmax=85,sc=x=>padL+(x-xmin)/(xmax-xmin)*(W-padL-padR);
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},document.getElementById("fig-uf"));
+  for(const g of [20,30,40,50,60,70,80]){
+    el("line",{x1:sc(g),y1:10,x2:sc(g),y2:H-24,stroke:css("--grid")},svg);
+    const t=el("text",{x:sc(g),y:H-8,"text-anchor":"middle","font-size":11.5,class:"num",fill:css("--muted")},svg);
+    t.textContent=g+"%";
+  }
+  el("line",{x1:sc(50),y1:10,x2:sc(50),y2:H-24,stroke:css("--baseline"),"stroke-dasharray":"3 3"},svg);
+  ent.forEach(([uf,v],i)=>{
+    const y=18+i*rowH;
+    const t=el("text",{x:padL-10,y:y+4,"text-anchor":"end","font-size":12.5,"font-weight":600,fill:css("--ink2")},svg);
+    t.textContent=uf;
+    el("line",{x1:sc(v.real),y1:y,x2:sc(v.prev),y2:y,stroke:css("--muted"),"stroke-width":1.6},svg);
+    const dR=el("circle",{cx:sc(v.real),cy:y,r:4.6,fill:css("--ink")},svg);
+    const dP=el("circle",{cx:sc(v.prev),cy:y,r:4.6,fill:css("--surface"),stroke:css("--accent"),"stroke-width":2.2},svg);
+    const msg=`<b>${uf}</b><br>oficial ${fmt(v.real,1)}% · sintético ${fmt(v.prev,1)}%<br>erro ${v.prev>v.real?"+":"−"}${fmt(Math.abs(v.prev-v.real),1)}pp`;
+    hover(dR,msg); hover(dP,msg);
+  });
+})();
+
+/* ---------- dispersão municipal (canvas) ---------- */
+(function(){
+  const cv=document.getElementById("fig-disp");
+  const pts=DATA.disp;
+  function draw(){
+    const dpr=devicePixelRatio||1, w=cv.clientWidth, h=460;
+    cv.width=w*dpr; cv.height=h*dpr;
+    const c=cv.getContext("2d"); c.scale(dpr,dpr); c.clearRect(0,0,w,h);
+    const pad={l:46,r:14,t:8,b:34};
+    const sx=v=>pad.l+v*(w-pad.l-pad.r), sy=v=>h-pad.b-v*(h-pad.t-pad.b);
+    c.strokeStyle=css("--grid"); c.fillStyle=css("--muted");
+    c.font="11.5px 'Source Sans 3',sans-serif"; c.textAlign="center";
+    for(const g of [0,.25,.5,.75,1]){
+      c.beginPath();c.moveTo(sx(g),sy(0));c.lineTo(sx(g),sy(1));c.stroke();
+      c.beginPath();c.moveTo(sx(0),sy(g));c.lineTo(sx(1),sy(g));c.stroke();
+      c.fillText(Math.round(g*100)+"%",sx(g),h-pad.b+16);
+      c.textAlign="right";c.fillText(Math.round(g*100)+"%",pad.l-6,sy(g)+4);c.textAlign="center";
+    }
+    c.fillText("resultado oficial (Lula, % dos válidos)",sx(.5),h-4);
+    c.save();c.translate(12,sy(.5));c.rotate(-Math.PI/2);c.fillText("previsto pelo sintético",0,0);c.restore();
+    c.strokeStyle=css("--baseline");c.setLineDash([4,4]);
+    c.beginPath();c.moveTo(sx(0),sy(0));c.lineTo(sx(1),sy(1));c.stroke();c.setLineDash([]);
+    const ink=css("--accent");
+    for(const [o,p,wgt] of pts){
+      c.beginPath();c.arc(sx(o),sy(p),Math.max(1.1,Math.sqrt(wgt)/220),0,7);
+      c.fillStyle=ink+"33";c.fill();
+    }
+    cv._geo={sx,sy,w,h};
+  }
+  draw(); addEventListener("resize",draw);
+  const cap=document.getElementById("disp-cap");
+  cv.addEventListener("mousemove",ev=>{
+    const r=cv.getBoundingClientRect(),{sx,sy}=cv._geo;
+    const mx=ev.clientX-r.left,my=ev.clientY-r.top;
+    let best=null,bd=110;
+    for(const pt of pts){const dx=sx(pt[0])-mx,dy=sy(pt[1])-my,d=dx*dx+dy*dy;
+      if(d<bd){bd=d;best=pt;}}
+    cap.textContent = best
+      ? `${best[3]} · oficial ${fmt(100*best[0],1)}% → previsto ${fmt(100*best[1],1)}% · ${best[2].toLocaleString("pt-BR")} aptos`
+      : "Passe o mouse para inspecionar.";
+  });
+})();
+
+/* ---------- projeção: passos ---------- */
+(function(){
+  const P=DATA.proj, b=100*P.base_2022.validos_esq;
+  const steps=[
+    {l:"2022 · comportamento e demografia de 2022", v:100*P.base_2022.validos_esq},
+    {l:"+ cadastro 2026 (sexo, idade, escolaridade)", v:100*P.so_eleitorado.validos_esq},
+    {l:"+ tendência religiosa 2010→2022→2026", v:100*P.so_religiao.validos_esq},
+    {l:"2026 · as duas derivas combinadas", v:100*P.proj_2026.validos_esq}];
+  const W=820,rowH=44,padL=330,padR=64,H=steps.length*rowH+34;
+  const xmin=46,xmax=53,sc=x=>padL+(x-xmin)/(xmax-xmin)*(W-padL-padR);
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},document.getElementById("fig-proj"));
+  for(const g of [46,48,50,52]){
+    el("line",{x1:sc(g),y1:8,x2:sc(g),y2:H-22,stroke:g===50?css("--baseline"):css("--grid"),
+      "stroke-dasharray":g===50?"3 3":"none"},svg);
+    const t=el("text",{x:sc(g),y:H-6,"text-anchor":"middle","font-size":11.5,class:"num",fill:css("--muted")},svg);
+    t.textContent=g+"%";
+  }
+  steps.forEach((s,i)=>{
+    const y=24+i*rowH;
+    const t=el("text",{x:padL-12,y:y+4,"text-anchor":"end","font-size":13,fill:i===0||i===3?css("--ink"):css("--ink2"),
+      "font-weight":i===0||i===3?700:400},svg);
+    t.textContent=s.l;
+    el("line",{x1:sc(b),y1:y,x2:sc(s.v),y2:y,stroke:css("--lula"),"stroke-width":10,
+      "stroke-linecap":"round",opacity:i===0?0:.35},svg);
+    const dot=el("circle",{cx:sc(s.v),cy:y,r:7,fill:css("--lula")},svg);
+    const tv=el("text",{x:sc(s.v)+(s.v>=b?14:-14),y:y+4,"font-size":13,class:"num","font-weight":700,
+      "text-anchor":s.v>=b?"start":"end",fill:css("--ink")},svg);
+    tv.textContent=fmt(s.v,2)+"%";
+    hover(dot,`<b>${s.l}</b><br>esquerda com ${fmt(s.v,2)}% dos válidos (${s.v-b>=0?"+":"−"}${fmt(Math.abs(s.v-b),2)}pp vs. 2022)`);
+  });
+})();
+
+/* ---------- cenários incumbência ---------- */
+(function(){
+  const C=DATA.proj.cenarios_incumbencia;
+  let h="<table><tr><th>cenário (log-chance da direita)</th><th>esquerda, % dos válidos</th><th>leitura</th></tr>";
+  const nomes={"-0.30":"vento forte contra o governo","-0.20":"vento contra o governo",
+    "-0.10":"vento leve contra","+0.00":"neutro — só a demografia",
+    "+0.10":"vento leve a favor","+0.20":"vento a favor do governo","+0.30":"vento forte a favor"};
+  for(const [k,v] of Object.entries(C)){
+    const e=100*v.validos_esq;
+    h+=`<tr${k==="+0.00"?' class="destaque"':""}><td>${k.replace("-","−")} · ${nomes[k]||""}</td><td class="num">${fmt(e,1)}%</td><td style="text-align:left">${e>=50?"esquerda na frente":"direita na frente"}</td></tr>`;
+  }
+  document.getElementById("tab-cen").innerHTML=h+"</table>";
+})();
+</script>
