@@ -19,6 +19,7 @@ def main() -> int:
     M = json.load(open(SAIDA / "modelo_2022.json", encoding="utf-8"))
     P = json.load(open(SAIDA / "projecao_2026.json", encoding="utf-8"))
     comp = json.load(open(SAIDA / "comparativo.json", encoding="utf-8"))
+    reg = json.load(open(SAIDA / "regionalizacao.json", encoding="utf-8"))
     pred = pd.read_parquet(SAIDA / "pred_2022.parquet")
 
     coef = np.array(M["coef"])
@@ -58,7 +59,7 @@ def main() -> int:
            "mae_validos": float(np.average(np.abs(vs_obs - vs_prev), weights=aptos)),
            "coefs": {c: {"lb": float(a), "nen": float(b)} for c, a, b in zip(cols, lb, nen)},
            "drop": {k: 100 * v["perda"] / M["pseudo_r2"] for k, v in M["drop_one"].items()},
-           "por_uf": por_uf, "proj": P, "disp": disp, "comp": comp}
+           "por_uf": por_uf, "proj": P, "disp": disp, "comp": comp, "reg": reg}
     with open(SAIDA / "relatorio_dados.json", "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False)
     print(f"dev_expl {out['dev_expl']:.4f} | r2 {r2_val:.3f} | "

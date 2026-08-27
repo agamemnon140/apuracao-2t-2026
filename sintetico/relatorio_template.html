@@ -233,6 +233,37 @@ footer p{margin:.35em 0}
 </section>
 
 <section>
+  <h2>Metrópoles convergem, o interior se regionaliza</h2>
+  <p>Hipótese testada: nas cidades grandes (1M+) o movimento seria de
+  <em>des-regionalização</em> — convergência para o centro nacional — enquanto nas
+  pequenas o efeito regional seria mais forte. A medida: dispersão do voto de esquerda
+  <em>entre regiões</em>, dentro de cada estrato de porte, ciclo a ciclo.</p>
+  <div class="fig">
+    <h3>Dispersão regional por porte de município</h3>
+    <div id="fig-reg"></div>
+    <div class="cap">Desvio-padrão ponderado das médias regionais (share de esquerda nos válidos) em torno da média do estrato. Porte pela população municipal de 2022 (congelada).</div>
+  </div>
+  <p><b>Confirmada nas urnas — e com data.</b> Em 2010, metrópoles e interior eram
+  igualmente regionalizados (~9,5 vs ~10,9pp). De lá para cá as curvas se separam:
+  a dispersão nas 15 cidades de 1M+ cai para 6,8pp em 2022, enquanto no interior
+  (&lt;100 mil) sobe até 19,5pp em 2018 e fecha em 15,5pp — <b>2,3× a das metrópoles</b>.
+  Os casos extremos: o Norte metropolitano (Manaus, Belém) <em>trocou de lado</em>
+  (65% → 44% de esquerda), o NE metropolitano desceu rumo ao centro (72% → 62%),
+  enquanto o NE interiorano subiu (73% → 75%) e o Sul interiorano despencou (49% → 38%).</p>
+  <div class="fig">
+    <h3>Médias regionais, 2010 → 2022</h3>
+    <div id="tab-reg"></div>
+    <div class="cap">Share de esquerda nos válidos. Amplitude = maior região menos menor.</div>
+  </div>
+  <p class="note"><b>Nuance do modelo:</b> líquida de demografia, a dummy regional das
+  metrópoles <em>não</em> encolheu (≈0,15 estável) — a convergência metropolitana veio
+  dos eixos nacionais (religião, raça, escolaridade) tomando o lugar do “lugar”: as
+  capitais votam cada vez mais como seus grupos demográficos e menos como sua região.
+  No interior, o pico de 2018 aparece até no resíduo — a regionalização de lá excede o
+  que a demografia explica.</p>
+</section>
+
+<section>
   <h2>2026: o que a demografia sozinha faz</h2>
   <p>Congelando o comportamento de 2022 (os coeficientes) e trocando só a composição do
   eleitorado — o cadastro real de agosto/2026 para sexo, idade e escolaridade, e a
@@ -525,6 +556,54 @@ document.getElementById("t-proj").textContent = fmt(dproj,1)+"pp";
   const ing=Object.values(T).map(t=>Math.abs(t.erro_ingenuo_pp));
   document.getElementById("cap-vento").textContent =
     `Share da esquerda nos válidos. Erro médio da previsão demográfica: ${fmt(errs.reduce((a,b)=>a+b,0)/errs.length,1)}pp; repetir o resultado nacional anterior erraria ${fmt(ing.reduce((a,b)=>a+b,0)/ing.length,1)}pp.`;
+})();
+
+/* ---------- regionalização por porte ---------- */
+(function(){
+  if(!DATA.reg) return;
+  const anos=["2010","2014","2018","2022"];
+  const series=[{k:"<100k",nome:"interior (<100 mil)",cor:css("--ink")},
+                {k:"100k-1M",nome:"médias (100 mil–1M)",cor:css("--muted")},
+                {k:"1M+",nome:"metrópoles (1M+)",cor:css("--accent")}];
+  const W=820,H=300,pl=56,pr=190,pt=14,pb=30;
+  const ymax=22;
+  const sx=i=>pl+i*(W-pl-pr)/3, sy=v=>pt+(1-v/ymax)*(H-pt-pb);
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"},document.getElementById("fig-reg"));
+  for(const g of [0,5,10,15,20]){
+    el("line",{x1:pl,y1:sy(g),x2:W-pr+16,y2:sy(g),stroke:css("--grid")},svg);
+    const t=el("text",{x:pl-8,y:sy(g)+4,"text-anchor":"end","font-size":11.5,class:"num",fill:css("--muted")},svg);
+    t.textContent=g+"pp";
+  }
+  anos.forEach((a,i)=>{
+    const t=el("text",{x:sx(i),y:H-8,"text-anchor":"middle","font-size":12,class:"num",fill:css("--muted")},svg);
+    t.textContent=a;
+  });
+  for(const s of series){
+    const vals=anos.map(a=>DATA.reg[a][s.k].disp_pp);
+    let d=""; vals.forEach((v,i)=>{d+=(i?"L":"M")+sx(i)+" "+sy(v);});
+    el("path",{d,fill:"none",stroke:s.cor,"stroke-width":2.4},svg);
+    vals.forEach((v,i)=>{
+      const dot=el("circle",{cx:sx(i),cy:sy(v),r:4.5,fill:s.cor,stroke:css("--surface"),"stroke-width":2},svg);
+      hover(dot,`<b>${s.nome}</b><br>${anos[i]}: dispersão regional de ${fmt(v,1)}pp<br>(${DATA.reg[anos[i]][s.k].n_municipios} municípios)`);
+    });
+    const t=el("text",{x:sx(3)+12,y:sy(vals[3])+4,"font-size":12.5,fill:s.cor,"font-weight":600},svg);
+    t.textContent=`${s.nome} · ${fmt(vals[3],1)}`;
+  }
+})();
+
+(function(){
+  if(!DATA.reg) return;
+  const regs=["NE","N","SE","CO","S"];
+  const col=(porte,ano)=>DATA.reg[ano][porte].por_regiao;
+  let h="<table><tr><th>região</th><th>metrópoles 2010</th><th>metrópoles 2022</th><th>interior 2010</th><th>interior 2022</th></tr>";
+  for(const r of regs){
+    h+=`<tr><td>${r}</td><td class="num">${fmt(col("1M+","2010")[r],1)}%</td><td class="num">${fmt(col("1M+","2022")[r],1)}%</td>`+
+       `<td class="num">${fmt(col("<100k","2010")[r],1)}%</td><td class="num">${fmt(col("<100k","2022")[r],1)}%</td></tr>`;
+  }
+  const amp=(porte,ano)=>{const v=Object.values(col(porte,ano));return Math.max(...v)-Math.min(...v);};
+  h+=`<tr class="destaque"><td>amplitude</td><td class="num">${fmt(amp("1M+","2010"),1)}pp</td><td class="num">${fmt(amp("1M+","2022"),1)}pp</td>`+
+     `<td class="num">${fmt(amp("<100k","2010"),1)}pp</td><td class="num">${fmt(amp("<100k","2022"),1)}pp</td></tr>`;
+  document.getElementById("tab-reg").innerHTML=h+"</table>";
 })();
 
 /* ---------- projeção: passos ---------- */

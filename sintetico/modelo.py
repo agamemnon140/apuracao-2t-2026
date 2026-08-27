@@ -65,13 +65,13 @@ def monta_xy(base: pd.DataFrame, mu=None, sd=None):
     return Xz, contagens, cols, mu, sd
 
 
-def ajusta(Xz: np.ndarray, contagens: np.ndarray):
+def ajusta(Xz: np.ndarray, contagens: np.ndarray, max_iter: int = 2000):
     n, k = Xz.shape
     X3 = np.repeat(Xz, 3, axis=0)
     y3 = np.tile(np.arange(3), n)
     w3 = contagens.ravel()
     ok = w3 > 0
-    m = LogisticRegression(penalty=None, solver="lbfgs", max_iter=2000, tol=1e-7)
+    m = LogisticRegression(penalty=None, solver="lbfgs", max_iter=max_iter, tol=1e-7)
     m.fit(X3[ok], y3[ok], sample_weight=w3[ok])
     return m
 
