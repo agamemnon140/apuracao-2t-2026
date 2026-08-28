@@ -75,6 +75,27 @@ main{padding-top:22px}
 .aviso{color:var(--muted);font-size:13.5px;margin:14px 0;max-width:75ch}
 .aviso b{color:var(--ink)}
 a{color:var(--accent)}
+.atual{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px;font-size:13.5px;color:var(--muted)}
+.atual b{color:var(--ink);font-variant-numeric:tabular-nums}
+.btn-atual{font:700 13px Archivo;letter-spacing:.02em;border:1px solid var(--line);background:var(--card);
+  color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer}
+.btn-atual:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-atual[disabled]{opacity:.6;cursor:progress}
+.dot-ok,.dot-falha{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot-ok{background:var(--bom)}.dot-falha{background:var(--meio)}
+.fonte{display:grid;grid-template-columns:130px 1fr 110px;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;align-items:start}
+.fonte .st{font:700 12px Archivo;letter-spacing:.03em;text-transform:uppercase}
+.fonte .papel{color:var(--muted);font-size:13px}
+.fonte .url{font-size:12px;word-break:break-all}
+.fonte .ms{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.cob{display:grid;grid-template-columns:44px 1fr 170px;gap:10px;align-items:center;padding:4px 0;font-size:13.5px}
+.cob .uf{font:700 13px Archivo}
+.cob .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0 4px}
+.passo{background:var(--ground);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:14px}
+.passo h4{font:800 14px Archivo;letter-spacing:.02em;margin-bottom:4px}
+.passo code{font:600 12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);word-break:break-all}
+.passo p{color:var(--muted);margin-top:4px}
 .rodape{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:30px;padding-top:14px}
 [hidden]{display:none !important}
 @media(max-width:560px){.brow{grid-template-columns:92px 1fr 90px}}
@@ -86,6 +107,7 @@ a{color:var(--accent)}
   <h1>Apuração 2026</h1>
   <p class="sub">Projeção do resultado final <b>durante</b> a apuração, a partir das seções já
   totalizadas — corrigindo o viés de quem apura primeiro. Só voto contado: nenhuma pesquisa.</p>
+  <div class="atual" id="atual"></div>
   <nav class="abas" role="tablist" id="abas"></nav>
 </header>
 <main id="main"></main>
@@ -96,9 +118,67 @@ Dados: TSE. Projeção não é resultado oficial.</p>
 <script>
 const FALLBACK = /*__LIVE__*/null;
 const ABAS = [["presidente","Presidente"],["governos","Governos"],["senado","Senado"],
-              ["camara","Câmara"],["assembleias","Assembleias"]];
+              ["camara","Câmara"],["assembleias","Assembleias"],["dados","Dados e fontes"]];
 let LIVE = FALLBACK, aba = "presidente";
+let ultimaBusca = null, ultimoErro = null, buscando = false, timer = null;
 const fmt = n => n==null ? "–" : n.toLocaleString("pt-BR");
+
+async function atualizar(){
+  if(buscando) return;
+  buscando = true; render();
+  try{
+    const r = await fetch("dados/live.json?t="+Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    LIVE = await r.json(); ultimaBusca = new Date(); ultimoErro = null;
+  }catch(e){ ultimoErro = String(e.message||e); }
+  buscando = false; render();
+  const seg = (LIVE && LIVE.atualiza_seg) || 60;
+  clearTimeout(timer); timer = setTimeout(atualizar, seg*1000);
+}
+function idade(d){
+  if(!d) return "–";
+  const s = Math.round((Date.now()-d.getTime())/1000);
+  return s<60 ? `${s}s` : s<3600 ? `${Math.floor(s/60)}min` : `${Math.floor(s/3600)}h`;
+}
+function barraAtual(){
+  const seg = (LIVE && LIVE.atualiza_seg) || 60;
+  const gerado = LIVE && LIVE.gerado_em ? new Date(LIVE.gerado_em) : null;
+  return `<button class="btn-atual" ${buscando?"disabled":""} onclick="atualizar()">${buscando?"atualizando…":"↻ Atualizar agora"}</button>
+    <span>última busca: <b>${ultimaBusca? idade(ultimaBusca)+" atrás" : "ao carregar"}</b></span>
+    <span>dados gerados: <b>${gerado? gerado.toLocaleString("pt-BR") : "–"}</b></span>
+    <span>automático a cada <b>${seg}s</b></span>
+    ${ultimoErro? `<span style="color:var(--meio)">falha na última busca (${ultimoErro}) — mostrando o último válido</span>` : ""}`;
+}
+function abaDados(){
+  const pipe = `<div class="pipe">
+    <div class="passo"><h4>1 · Descoberta</h4><code>resultados.tse.jus.br/oficial/comum/config/ele-c.json</code>
+      <p>Índice de pleitos do TSE. Dele saem o código do <em>pleito</em> e o da <em>eleição</em> de 2026 (são diferentes) e os cargos. Relido a cada ciclo; nada fica cravado no código.</p></div>
+    <div class="passo"><h4>2 · Parcial por UF</h4><code>…/ele{ciclo}/{eleição}/dados-simplificados/{uf}/{uf}-c{cargo}-e{eleição}-r.json</code>
+      <p>28 arquivos por cargo (BR + 27 UFs): % de seções totalizadas, eleitorado apurado, votos por candidato. É a camada que mantém o needle vivo mesmo se o resto falhar.</p></div>
+    <div class="passo"><h4>3 · Município</h4><code>…/dados/{uf}/{uf}-c{cargo}-e{eleição}-e.json</code>
+      <p>A UF inteira, município a município, em 1 requisição — quando o TSE publica esse formato (existiu em 2024, não na suplementar de RR). O coletor testa e escolhe; o parcial municipal é corrigido pela curva histórica de chegada de cada cidade.</p></div>
+    <div class="passo"><h4>4 · Seção (opcional)</h4><code>…/arquivo-urna/{pleito}/dados/{uf}/{mun}/{zona}/{seção}/…-aux.json</code>
+      <p>~200 mil seções ranqueadas por heterogeneidade da cidade. Refina 0,1–0,3 ponto; se cair, a noite não perde nenhuma chamada.</p></div>
+    <div class="passo"><h4>5 · Modelo → esta página</h4><code>dados/live.json</code>
+      <p>O runner local recalcula projeções e probabilidades a cada ciclo e publica este JSON no repositório. A página só lê — com <code>?t=</code> para furar cache — e cai no JSON embutido se a busca falhar.</p></div>
+  </div>`;
+  const fontes = (LIVE.fontes||[]).map(f=>`<div class="fonte">
+    <div class="st"><span class="${f.ok?"dot-ok":"dot-falha"}"></span>${f.ok?"OK":"FALHA"} · HTTP ${f.http}</div>
+    <div><div>${f.nome}</div><div class="papel">${f.papel}</div><div class="url"><a href="${f.url}">${f.url.replace("https://","")}</a></div></div>
+    <div class="ms">${f.ms} ms<br>${f.bytes? (f.bytes/1024).toFixed(0)+" KB" : ""}</div></div>`).join("");
+  const cob = LIVE.cobertura||[];
+  const cobHtml = cob.map(c=>`<div class="cob"><div class="uf">${c.uf}</div>
+    <div class="btrack"><div class="bfill" style="width:${c.pct}%"></div></div>
+    <div class="n"><b>${c.pct}%</b> · ${fmt(c.tot)} / ${fmt(c.de)}</div></div>`).join("");
+  const tot = cob.reduce((s,c)=>s+c.tot,0), de = cob.reduce((s,c)=>s+c.de,0);
+  const quando = LIVE.gerado_em? new Date(LIVE.gerado_em).toLocaleString("pt-BR") : "–";
+  return `<section class="banc"><h2>De onde vem cada número</h2>
+    <p class="exp">A cascata de coleta, do link mais barato ao mais fino. Modo atual: <b>${LIVE.modo}</b> — ${LIVE.congelado_em||""}.</p>${pipe}</section>
+    <section class="banc" style="margin-top:14px"><h2>Fontes do TSE — checadas na última geração dos dados</h2>
+    <p class="exp">Cada link é acessado de verdade quando o <code>live.json</code> é gerado (${quando}). Na noite, isso roda a cada ciclo.</p>${fontes}</section>
+    <section class="banc" style="margin-top:14px"><h2>Seções totalizadas por estado</h2>
+    <p class="exp">${fmt(tot)} de ${fmt(de)} seções no instante retratado (${de? (100*tot/de).toFixed(1):0}%). Na noite, esta tabela vem do próprio coletor e é a primeira coisa a olhar quando um estado parece mudo.</p>${cobHtml}</section>`;
+}
 
 function pillP(p){
   const pct = (100*p).toFixed(0)+"%";
@@ -149,6 +229,7 @@ function bancada(b, titulo, exp){
   (p10–p90). Detalhe candidato a candidato na <a href="regua-quociente.html">Régua do Quociente</a>.</p></section>`;
 }
 function render(){
+  document.getElementById("atual").innerHTML = barraAtual();
   document.getElementById("abas").innerHTML = ABAS.map(([k,r])=>
     `<button class="aba" role="tab" aria-selected="${k===aba}" onclick="aba='${k}';render()">${r}</button>`).join("");
   const m = document.getElementById("main");
@@ -160,9 +241,11 @@ function render(){
     "Em 2022 cada estado elegeu 1 senador. Em 2026 serão 2 vagas por estado: este painel passa a mostrar P(ficar entre os 2).");
   if(aba==="camara") m.innerHTML = bancada(LIVE.camara,
     "Câmara dos Deputados — bancada nacional projetada", "513 cadeiras somadas pelos mesmos sorteios que dão o P(eleito) de cada candidato.");
+  if(aba==="dados") m.innerHTML = abaDados();
   if(aba==="assembleias") m.innerHTML = bancada(LIVE.assembleias,
     "Assembleias estaduais — soma das 27 casas", "1.059 cadeiras estaduais projetadas pela mesma máquina de quociente e sobras.");
 }
-fetch("dados/live.json?t="+Date.now()).then(r=>r.json()).then(j=>{LIVE=j;render();}).catch(()=>render());
 render();
+atualizar();
+setInterval(()=>{ if(!buscando) document.getElementById("atual").innerHTML = barraAtual(); }, 5000);
 </script>

@@ -19,6 +19,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import math
+import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +30,62 @@ from pipeline.modelo import monta as monta_pres, projeta as proj_pres
 from pipeline.modelo_estadual import BASE, monta as monta_gov, projeta as proj_uf
 from probe.calibracao import corridas
 from pipeline.quociente import FEDERACOES
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+import fetch as tse_fetch  # noqa: E402
+import cdn  # noqa: E402
+
+
+# Os links que o coletor da noite vai usar, checados AO VIVO a cada geracao do live.json.
+FONTES = [
+    ("Índice de pleitos (descoberta de códigos)",
+     "https://resultados.tse.jus.br/oficial/comum/config/ele-c.json",
+     "De onde sai o código da eleição de 2026 — relido em runtime, nunca cravado."),
+    ("Parcial nacional/UF (formato -r.json)",
+     "https://resultados.tse.jus.br/oficial/ele2022/544/dados-simplificados/br/br-c0001-e000544-r.json",
+     "O parcial que alimenta o needle: % de seções, votos por candidato. Testado no arquivo de 2022."),
+    ("Detalhe por município (formato -e.json)",
+     "https://resultados.tse.jus.br/oficial/ele2024/619/dados/sp/sp-c0011-e000619-e.json",
+     "A UF inteira, município a município, em 1 requisição — se existir em 2026; o coletor detecta."),
+    ("Catálogo de dados abertos (CKAN)",
+     "https://dadosabertos.tse.jus.br/api/3/action/package_show?id=resultados-2022",
+     "De onde saíram baseline por seção, carimbos de totalização e listas de eleitos."),
+]
+
+
+def checa_fontes() -> list[dict]:
+    out = []
+    for nome, url, papel in FONTES:
+        t0 = time.time()
+        # dadosabertos/cdn bloqueiam UA de robo: o coletor usa cdn.H la, o checador tambem
+        if "dadosabertos" in url or "cdn.tse" in url:
+            import urllib.request
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers=cdn.H), timeout=25) as r:
+                    st, corpo = r.status, r.read()
+            except Exception as e:                       # 4xx/5xx/rede
+                st, corpo = getattr(e, "code", -1), b""
+        else:
+            st, corpo = tse_fetch.get(url, timeout=25)
+        out.append({"nome": nome, "url": url, "papel": papel,
+                    "ok": st == 200, "http": st, "ms": round(1000 * (time.time() - t0)),
+                    "bytes": (len(corpo) if st == 200 else 0)})
+    return out
+
+
+def cobertura_por_uf() -> list[dict]:
+    """Secoes totalizadas por estado no instante retratado (10% nacional = ~18h32 de 2022).
+
+    Na noite real, esta tabela vem do proprio coletor; aqui, dos carimbos do replay.
+    """
+    car = pd.read_parquet(BASE / "carimbos_governador_2022_t1.parquet")
+    corte = car["prim_tot"].sort_values().iloc[int(len(car) * P / 100)]
+    out = []
+    for uf, g in car.groupby("uf"):
+        n = int((g["prim_tot"] <= corte).sum())
+        out.append({"uf": uf, "tot": n, "de": int(len(g)),
+                    "pct": round(100 * n / len(g), 1)})
+    return sorted(out, key=lambda x: -x["pct"])
 
 P = 10.0
 SAIDA = Path(__file__).resolve().parents[1] / "docs" / "dados" / "live.json"
@@ -121,6 +179,9 @@ def main() -> None:
         "governos": govs, "senado": sens,
         "camara": bancadas("federal", sig),
         "assembleias": bancadas("estadual", sig),
+        "atualiza_seg": 60,
+        "fontes": checa_fontes(),
+        "cobertura": cobertura_por_uf(),
     }
     SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text(json.dumps(live, ensure_ascii=False, separators=(",", ":")), "utf-8")
