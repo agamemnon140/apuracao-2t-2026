@@ -1,0 +1,34 @@
+name: Checa fontes do TSE
+
+# Mantém a aba "Dados e fontes" honesta todo dia, e vira rede de segurança nos dias de
+# eleição: a cada 5 min a partir das 16h de Brasília (19h UTC). Só atualiza o bloco de
+# status do live.json — o modelo roda no runner local.
+on:
+  schedule:
+    - cron: "0 12 * * *"            # diário, 09:00 BRT
+    - cron: "*/5 19-23 4 10 *"      # 1º turno, 04/10/2026, 16h-20h59 BRT
+    - cron: "*/5 0-2 5 10 *"        # madrugada seguinte (UTC)
+    - cron: "*/5 19-23 25 10 *"     # 2º turno, 25/10/2026
+    - cron: "*/5 0-2 26 10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  checa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Checa fontes e atualiza status
+        run: python tools/checa_fontes.py docs/dados/live.json
+      - name: Publica
+        run: |
+          git config user.name "checa-fontes[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/dados/live.json
+          git diff --cached --quiet || git commit -m "Status das fontes do TSE [skip ci]"
+          git push

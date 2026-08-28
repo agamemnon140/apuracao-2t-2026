@@ -73,6 +73,32 @@ def checa_fontes() -> list[dict]:
     return out
 
 
+def curva_2022() -> dict:
+    """% de secoes totalizadas por minuto, das 17:00 as 23:59 de 02/10/2022, BR e por UF.
+
+    E a referencia 'onde estava a apuracao de 2022 neste mesmo horario' da aba Dados.
+    Estatico: gravado uma vez em docs/dados/curva_2022.json.
+    """
+    car = pd.read_parquet(BASE / "carimbos_governador_2022_t1.parquet")
+    t0 = pd.Timestamp("2022-10-02 17:00:00")
+    minutos = pd.date_range(t0, "2022-10-02 23:59:00", freq="1min")
+    out = {"inicio": "17:00", "passo_min": 1}
+    def serie(g):
+        ts = g["prim_tot"].sort_values().to_numpy()
+        return [round(100 * float(np.searchsorted(ts, m.to_datetime64(), side="right")) / len(ts), 1)
+                for m in minutos]
+    out["BR"] = serie(car)
+    for uf, g in car.groupby("uf"):
+        out[uf] = serie(g)
+    return out
+
+
+def instante_retratado() -> str:
+    car = pd.read_parquet(BASE / "carimbos_governador_2022_t1.parquet")
+    corte = car["prim_tot"].sort_values().iloc[int(len(car) * P / 100)]
+    return corte.strftime("%H:%M")
+
+
 def cobertura_por_uf() -> list[dict]:
     """Secoes totalizadas por estado no instante retratado (10% nacional = ~18h32 de 2022).
 
@@ -180,9 +206,13 @@ def main() -> None:
         "camara": bancadas("federal", sig),
         "assembleias": bancadas("estadual", sig),
         "atualiza_seg": 60,
+        "instante": instante_retratado(),        # HH:MM de 2022 que o snapshot retrata
         "fontes": checa_fontes(),
         "cobertura": cobertura_por_uf(),
     }
+    curva = SAIDA.parent / "curva_2022.json"
+    curva.write_text(json.dumps(curva_2022(), separators=(",", ":")), "utf-8")
+    print(f"{curva}  ({curva.stat().st_size/1e3:.0f} KB)")
     SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text(json.dumps(live, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"{SAIDA}  ({SAIDA.stat().st_size/1e3:.0f} KB)")
