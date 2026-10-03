@@ -13,10 +13,11 @@ from pathlib import Path
 import pandas as pd
 
 from pipeline.needle_dep import carrega, needle_uf
+from sintetico.caminhos import BASELINE
 
 CARGO = sys.argv[1] if len(sys.argv) > 1 else "federal"
 P = float(sys.argv[2]) if len(sys.argv) > 2 else 10
-BASE = Path("D:/Claude/eleicoes-dados/baseline")
+BASE = BASELINE
 
 
 def main() -> None:

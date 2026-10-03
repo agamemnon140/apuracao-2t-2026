@@ -33,8 +33,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sintetico.caminhos import BASELINE
 
-BASE = Path(r"D:\Claude\eleicoes-dados\baseline")
+BASE = BASELINE
 CHAVE = ["uf", "cd_municipio", "zona", "secao"]
 K_B = 0.05          # forca do prior b_c = 0, em fracao da dispersao total do eixo
 K_MUN = 300.0       # encolhimento do efeito de municipio, em votos equivalentes

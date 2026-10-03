@@ -24,24 +24,24 @@ liderando por 7 pontos, e a liderança só se inverteu perto de 70% apurado. Cor
 pontos de viés de composição — projetando o que falta a partir de como cada lugar votou em 2022 —
 é a única razão de o projeto existir.
 
-## Estado
+## Estado (27/09/2026)
 
-Sondagem concluída e **bancada de teste pronta** (`probe/ACHADOS.md`). Nada de coleta ao vivo ainda.
+Pronto para a noite, testado no replay de 2022 e com dados sintéticos de boletim:
 
-O replay reconstrói a noite de 2022 na ordem real em que as seções entraram e reproduz a curva
-oficial do TSE com diferença de até **0,02 ponto**, com os totais finais batendo voto a voto. O
-modelo da noite vai ser medido contra a noite de verdade, não contra uma simulação.
+- **Âncora única** por urna: 2º turno de 2022 andado pela demografia de 2026 (`sintetico/ancora_2026.py`).
+- **Alvo** de 50%+1 dos válidos com ganho relativo igual no país, por UF, município, zona, local e
+  seção (`sintetico/alvo_2026.py`).
+- **Needle hierárquico** bottom-up sobre a âncora (`pipeline/needle_hier.py`), calibrado nas duas
+  noites de 2022 (`probe/calibra_hier.py`); governador e Senado pelo modelo estadual
+  (`pipeline/estadual_live.py`).
+- **Coleta**: feed do TSE com descoberta de códigos em runtime (`runner/coletor.py`) e crawler de
+  todos os boletins de urna (`runner/bu_crawler.py`, `runner/imgbu.py`).
+- **Laço da noite** com modo replay (`runner/ciclo.py`) e publicação no Pages ou por túnel.
+- **Mapa** (`docs/mapa.html`): Brasil → UF → município → zona → local → seção, 2022 × 2026, todos os
+  cargos e turnos, uma bolha por eleitor; base gerada por `web/gera_estatico.py` e `web/geo.py`.
 
-- `tools/fetch.py` — cliente do feed de resultados (`resultados.tse.jus.br`)
-- `tools/cdn.py` — cliente dos dados abertos (`cdn.tse.jus.br`, que bloqueia UA de robô)
-- `tools/baixa_baseline.py` — baseline por seção de 2018 e 2022, URLs vindas do catálogo CKAN
-- `tools/vigia_ele_c.py` — vigia o índice de pleitos: dispara quando a geral de 2026 (ou uma
-  suplementar para ensaio) for configurada
-- `probe/probe_paths.py` — matriz de caminhos do feed
-- `probe/curva_vies.py` — a curva de viés acima, do histórico oficial
-- `pipeline/baseline_presidente.py` — baseline presidencial por seção (2018 e 2022)
-- `pipeline/carimbos.py` — quando cada seção entrou na apuração, e seu eleitorado
-- `pipeline/replay.py` — re-toca a noite de 2022 e confere contra o registro oficial
+Como operar: [`docs/RUNBOOK.md`](docs/RUNBOOK.md). Método e números: [`docs/METODO.md`](docs/METODO.md).
+Achados de cada sondagem: [`probe/ACHADOS.md`](probe/ACHADOS.md).
 
 Dados pesados: `D:\Claude\eleicoes-dados` (fora do repo e fora do Google Drive).
 
@@ -55,4 +55,11 @@ py tools/baixa_baseline.py    # 6 GB, retomavel
 .venv/Scripts/python -m pipeline.baseline_presidente   # baseline por secao
 .venv/Scripts/python -m pipeline.carimbos              # ordem real de chegada
 .venv/Scripts/python -m pipeline.replay                # confere contra o oficial
+
+.venv/Scripts/python -m sintetico.ancora_2026          # ancora por urna (--calib: 2018->2022)
+.venv/Scripts/python -m sintetico.alvo_2026            # alvo de 50%+1
+.venv/Scripts/python -m probe.calibra_hier --rho 0,0.6,1   # needle no replay de 2022
+.venv/Scripts/python -m web.gera_estatico              # base do mapa
+.venv/Scripts/python -m runner.ciclo --modo replay --velocidade 20   # a noite de 2022, acelerada
+.venv/Scripts/python tests/navega_mapa.py              # teste de fumaca do mapa (Edge headless)
 ```

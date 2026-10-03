@@ -18,8 +18,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import cdn  # noqa: E402
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parents[1]))
+from sintetico.caminhos import BRUTO_TSE
 
-DADOS = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
+DADOS = BRUTO_TSE
 BASE = f"{cdn.CDN}/eleicoes/eleicoes2022"
 ALVOS = [0.5, 1, 2, 5, 10, 20, 30, 50, 70, 90]
 

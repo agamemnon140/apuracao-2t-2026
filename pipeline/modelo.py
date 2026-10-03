@@ -28,8 +28,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sintetico.caminhos import BASELINE
 
-BASE = Path(r"D:\Claude\eleicoes-dados\baseline")
+BASE = BASELINE
 CHAVE = ["uf", "cd_municipio", "zona", "secao"]
 
 # forca dos priores, em unidades de "peso de dados equivalente".

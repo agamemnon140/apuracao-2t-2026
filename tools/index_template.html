@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Apuração 2026</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
 <style>
@@ -113,10 +114,11 @@ a{color:var(--accent)}
   totalizadas — corrigindo o viés de quem apura primeiro. Só voto contado: nenhuma pesquisa.</p>
   <div class="atual" id="atual"></div>
   <nav class="abas" role="tablist" id="abas"></nav>
+  <p class="sub"><a href="mapa.html">Mapa da apuração →</a> estado, município, zona, local e seção; 2022 contra 2026, com o alvo de cada candidato.</p>
 </header>
 <main id="main"></main>
 <p class="rodape">Modelo e validação: <a href="https://github.com/agamemnon140/apuracao-2026">apuracao-2026</a>
-· <a href="METODO.md">método e parâmetros</a> · needle por deputado: <a href="regua-quociente.html">Régua do Quociente</a>.
+· <a href="METODO.md">método e parâmetros</a> · <a href="mapa.html">mapa</a> · needle por deputado: <a href="regua-quociente.html">Régua do Quociente</a>.
 Dados: TSE. Projeção não é resultado oficial.</p>
 </div>
 <script>
@@ -221,6 +223,7 @@ function pillP(p){
   return `<span class="pillp pp-baixa">${pct}</span>`;
 }
 function heroPresidente(pr){
+  if(LIVE && LIVE.modo==="aguardando") return `<section class="hero"><h2>Presidente — projeção nacional</h2><div class="quando">${LIVE.congelado_em||"aguardando a apuração"}</div><div class="hero-nums"><div class="hn"><b>0%</b><span>das seções apuradas</span></div>${pr&&pr.ancora_esq!=null?`<div class="hn"><b>${pr.ancora_esq}% × ${pr.ancora_dir}%${pr.ancora_out!=null?` <small style="font-weight:400">(+${pr.ancora_out}% terceiros)</small>`:""}</b><span>ponto de partida demográfico (% dos válidos)</span></div>`:""}<div class="hn"><b>50%+1</b><span>alvo do 1º turno — lugar a lugar no <a href="mapa.html">mapa</a></span></div></div><p class="aviso">Nenhum voto apurado ainda. O needle aparece aqui assim que as primeiras urnas fecharem.</p></section>`;
   const esc = 25;                       // escala do needle: ±25 pontos de margem
   const pos = m => 50 + 50*Math.max(-1,Math.min(1,m/esc));
   return `<section class="hero">
@@ -235,17 +238,20 @@ function heroPresidente(pr){
       <div class="hn"><b>${pr.margem>0?"+":""}${pr.margem.toLocaleString("pt-BR")}</b><span>margem projetada (válidos)</span></div>
       <div class="hn"><b>${(100*pr.p_lider).toFixed(1)}%</b><span>prob. de ${pr.lider} liderar no fim</span></div>
       <div class="hn"><b>${pr.tela_crua>0?"+":""}${pr.tela_crua.toLocaleString("pt-BR")}</b><span>o que a tela crua dizia</span></div>
+      ${pr.p_esq50!=null?`<div class="hn"><b>${(100*pr.p_esq50).toFixed(1)}% · ${(100*pr.p_dir50).toFixed(1)}%</b><span>chance de liquidar no 1º turno (esquerda · direita), ±${pr.sigma} pts</span></div>`:""}
     </div>
     <p class="aviso">O ponto pequeno cinza é o parcial cru — em 2022 ele apontou o <b>perdedor</b>
     por quase três horas. O ponto grande é a projeção corrigida pela composição de quem já apurou.</p>
   </section>`;
 }
 function gridUF(lista, nota){
+  if(!lista || !lista.length) return `<p class="aviso">Aguardando apuração — os 27 cards abrem com as primeiras urnas de cada estado.</p>`;
   const cards = lista.map(g=>`<div class="uf-card">
     <h3>${g.uf} <small>${g.pct_secoes}% apurado</small></h3>
     <div class="linha"><span class="quem">${g.lider}</span>${pillP(g.p_lider)}</div>
     <div class="linha"><span class="quem" style="font-weight:400">projetado <em>${g.share}%</em></span></div>
-    <div class="linha"><span class="quem" style="font-weight:400">2º ${g.segundo} <em>${g.share2}%</em></span></div>
+    <div class="linha"><span class="quem" style="font-weight:400">2º ${g.segundo} <em>${g.share2}%</em></span>${g.p_top2!=null?pillP(g.p_top2):""}</div>
+    ${g.terceiro?`<div class="linha"><span class="quem" style="font-weight:400">3º ${g.terceiro} <em>${g.share3}%</em></span></div>`:""}
   </div>`).join("");
   return `<p class="aviso">${nota}</p><div class="grid">${cards}</div>`;
 }
@@ -253,17 +259,19 @@ function bancada(b, titulo, exp){
   if(!b) return `<p class="aviso">bancada indisponível neste snapshot.</p>`;
   const max = Math.max(...b.nacional.map(x=>x.p90));
   const rows = b.nacional.map(x=>`<div class="brow">
-    <div class="sig">${x.agr}</div>
+    <div class="sig">${x.agr}${x.clausula===false?' <span style="color:var(--muted)" title="projeção abaixo da cláusula de desempenho de 2026 (2,5% dos válidos com 1,5% em 9 UFs, ou 13 eleitos em 9 UFs) — restringe fundo e propaganda, não cadeiras">†</span>':''}</div>
     <div class="btrack"><div class="bfill" style="width:${100*x.med/max}%"></div>
       <div class="bic" style="left:${100*x.p10/max}%;width:${100*(x.p90-x.p10)/max}%"></div></div>
     <div class="bnum"><b>${x.med}</b> (${x.p10}–${x.p90})</div>
   </div>`).join("");
   return `<section class="banc"><h2>${titulo}</h2><p class="exp">${exp}</p>${rows}
   <p class="aviso">A barra é a mediana dos sorteios; o traço fino, o intervalo de 80%
-  (p10–p90). Detalhe candidato a candidato na <a href="regua-quociente.html">Régua do Quociente</a>.</p></section>`;
+  (p10–p90). Detalhe candidato a candidato na <a href="regua-quociente.html">Régua do Quociente</a>.${b.nacional.some(x=>x.clausula===false)?' <b>†</b> abaixo da cláusula de desempenho de 2026 na projeção.':''}${b.pct_medio!=null?` Média de ${b.pct_medio}% das urnas apuradas nas 27 UFs.`:''}</p></section>`;
 }
 function render(){
   document.getElementById("atual").innerHTML = barraAtual();
+  { const bn = document.querySelector(".demo-banner"); if (bn) { bn.hidden = LIVE && LIVE.modo === "ao-vivo";
+    if (LIVE && LIVE.modo === "aguardando") bn.innerHTML = '<div class="wrap"><b>aguardando</b> a apuração do 1º turno começa às 17h de 04/10/2026 — os painéis abrem zerados e atualizam a cada minuto.</div>'; } }
   document.getElementById("abas").innerHTML = ABAS.map(([k,r])=>
     `<button class="aba" role="tab" aria-selected="${k===aba}" onclick="aba='${k}';render()">${r}</button>`).join("");
   const m = document.getElementById("main");

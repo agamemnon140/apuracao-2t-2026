@@ -1,0 +1,22 @@
+
+{ "ele" : "619", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "mu", "cdabr" : "01392", "dg" : "25/11/2024", "hg" : "12:51:53", "dt" : "06/10/2024", "ht" : "17:32:38", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "cd" : "11", "nmn" : "Prefeito", "nmm" : "Prefeito", "nmf" : "Prefeita", "nv" : "1", "fed" : [  ], "agr" : [ 
+{ "n" : "10001695692", "nm" : "PRODUZIR PARA EMPREGAR", "tp" : "c", "com" : "PP / PL / UNIÃO / PODE / CIDADANIA / PSDB / SOLIDARIEDADE", "tvtn" : "108605", "tvan" : "108605", "par" : [ 
+{ "n" : "22", "sg" : "PL", "nm" : "Partido Liberal", "nfed" : "", "tvtn" : "108605", "tvan" : "108605", "cand" : [ 
+{ "n" : "22", "sqcand" : "10001908807", "nm" : "SEBASTIAO BOCALOM RODRIGUES", "nmu" : "TIÃO BOCALOM", "dt" : "18/05/1953", "dvt" : "Válido", "seq" : "1", "e" : "s", "st" : "Eleito", "vap" : "108605", "pvap" : "54,82", "pvapn" : "54,824705318", "vs" : [ 
+{ "tp" : "v", "sqcand" : "10001908808", "nm" : "ALYSSON BESTENE LINS", "nmu" : "ALYSSON BESTENE", "sgp" : "PP" } ] } ] } ] }, 
+{ "n" : "10001696178", "nm" : "Partido Novo", "tp" : "i", "com" : "NOVO", "vag" : "0", "par" : [ 
+{ "n" : "30", "sg" : "NOVO", "nm" : "Partido Novo", "nfed" : "", "tvtn" : "14186", "tvan" : "14186", "cand" : [ 
+{ "n" : "30", "sqcand" : "10001913167", "nm" : "EMERSON OLIVEIRA JARUDE THOMAZ", "nmu" : "JARUDE", "dt" : "06/11/1989", "dvt" : "Válido", "seq" : "25", "e" : "n", "st" : "Não eleito", "vap" : "14186", "pvap" : "7,16", "pvapn" : "7,161210530", "vs" : [ 
+{ "tp" : "v", "sqcand" : "10001913166", "nm" : "ISAIAS DE OLIVEIRA PEDRO", "nmu" : "CAPITAO ISAIAS", "sgp" : "NOVO" } ] } ] } ] }, 
+{ "n" : "10001733969", "nm" : "Partido Socialista Brasileiro", "tp" : "i", "com" : "PSB", "vag" : "0", "par" : [ 
+{ "n" : "40", "sg" : "PSB", "nm" : "Partido Socialista Brasileiro", "nfed" : "", "tvtn" : "6420", "tvan" : "6420", "cand" : [ 
+{ "n" : "40", "sqcand" : "10002171655", "nm" : "JANILSON LOPES LEITE", "nmu" : "DR JENILSON", "dt" : "02/01/1978", "dvt" : "Válido", "seq" : "29", "e" : "n", "st" : "Não eleito", "vap" : "6420", "pvap" : "3,24", "pvapn" : "3,240869280", "vs" : [ 
+{ "tp" : "v", "sqcand" : "10002171656", "nm" : "SANDERSON SILVA DE MOURA", "nmu" : "SANDERSON MOURA", "sgp" : "PSB" } ] } ] } ] }, 
+{ "n" : "10001704616", "nm" : "Bora Rio Branco", "tp" : "c", "com" : "MDB / PC do B / PT / PV / PSD / REPUBLICANOS / AGIR / PRD", "tvtn" : "68884", "tvan" : "68884", "par" : [ 
+{ "n" : "15", "sg" : "MDB", "nm" : "Movimento Democrático Brasileiro", "nfed" : "", "tvtn" : "68884", "tvan" : "68884", "cand" : [ 
+{ "n" : "15", "sqcand" : "10001984285", "nm" : "MARCUS ALEXANDRE MEDICI AGUIAR VIANA DA SILVA", "nmu" : "MARCUS ALEXANDRE", "dt" : "13/06/1977", "dvt" : "Válido", "seq" : "23", "e" : "n", "st" : "Não eleito", "vap" : "68884", "pvap" : "34,77", "pvapn" : "34,773214872", "vs" : [ 
+{ "tp" : "v", "sqcand" : "10001984286", "nm" : "MARFIZA DE LIMA GALVAO", "nmu" : "MARFISA GALVÃO", "sgp" : "PSD" } ] } ] } ] } ] } ], "s" : 
+{ "ts" : "883", "st" : "883", "pst" : "100,00", "pstn" : "100", "snt" : "0", "psnt" : "0,00", "psntn" : "0", "si" : "883", "psi" : "100,00", "psin" : "100", "sni" : "0", "psni" : "0,00", "psnin" : "0", "sa" : "883", "psa" : "100,00", "psan" : "100", "sna" : "0", "psna" : "0,00", "psnan" : "0" }, "e" : 
+{ "te" : "271518", "est" : "271518", "pest" : "100,00", "pestn" : "100", "esnt" : "0", "pesnt" : "0,00", "pesntn" : "0", "esi" : "271518", "pesi" : "100,00", "pesin" : "100", "esni" : "0", "pesni" : "0,00", "pesnin" : "0", "esa" : "271518", "pesa" : "100,00", "pesan" : "100", "esna" : "0", "pesna" : "0,00", "pesnan" : "0", "c" : "205664", "pc" : "75,75", "pcn" : "75,745991058", "a" : "65854", "pa" : "24,25", "pan" : "24,254008942" }, "v" : 
+{ "tv" : "205664", "vvc" : "198095", "pvvc" : "96,32", "pvvcn" : "96,319725377", "vv" : "198095", "pvv" : "100,00", "pvvn" : "100", "vnom" : "198095", "pvnom" : "100,00", "pvnomn" : "100", "van" : "0", "pvan" : "0,00", "pvann" : "0", "vansj" : "0", "pvansj" : "0,00", "pvansjn" : "0", "vb" : "2782", "pvb" : "1,35", "pvbn" : "1,352691769", "tvn" : "4787", "ptvn" : "2,33", "ptvnn" : "2,327582854", "vn" : "4787", "pvn" : "100,00", "pvnn" : "100", "vnt" : "0", "pvnt" : "0,00", "pvntn" : "0", "vscv" : "0" } }

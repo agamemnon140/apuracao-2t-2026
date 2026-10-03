@@ -1,13 +1,17 @@
-"""Caminhos do projeto sintetico. Dados pesados ficam fora do repo (D:)."""
+"""Caminhos dos dados do projeto (fora do repo). Em outra maquina, aponte a variavel de
+ambiente ELEICOES_DADOS para a pasta copiada -- ex.: set ELEICOES_DADOS=E:\eleicoes-dados"""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-DADOS = Path(r"D:\Claude\eleicoes-dados")
+DADOS = Path(os.environ.get("ELEICOES_DADOS", r"D:\Claude\eleicoes-dados"))
 BRUTO_TSE = DADOS / "raw" / "dadosabertos"
 BRUTO_IBGE = DADOS / "raw" / "ibge"
 BASELINE = DADOS / "baseline"
 SAIDA = DADOS / "sintetico"
+VIVO = DADOS / "live"
+FERRAMENTAS = DADOS / "ferramentas"
 
 UFS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS",
        "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC",

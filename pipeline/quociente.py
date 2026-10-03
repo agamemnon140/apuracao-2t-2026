@@ -27,6 +27,20 @@ CADEIRAS = {"SP": 70, "MG": 53, "RJ": 46, "BA": 39, "RS": 31, "PR": 30, "PE": 25
             "RR": 8, "SE": 8, "TO": 8}          # total 513
 
 
+def federacoes(ano: int) -> dict[str, str]:
+    """numero de partido -> agremiacao, lido de config/partidos.json (2022 e 2026)."""
+    import json
+    from pathlib import Path
+    cfg = json.loads((Path(__file__).resolve().parents[1] / "config" / "partidos.json").read_text("utf-8"))
+    return {nr: nome for nome, nrs in cfg["federacoes"][str(ano)].items() for nr in nrs}
+
+
+def define_ano(ano: int) -> None:
+    """Troca as federacoes vigentes NO LUGAR (quem importou FEDERACOES ve a mudanca)."""
+    FEDERACOES.clear()
+    FEDERACOES.update(federacoes(ano))
+
+
 def agremiacao(nr_partido: str) -> str:
     return FEDERACOES.get(nr_partido, nr_partido)
 

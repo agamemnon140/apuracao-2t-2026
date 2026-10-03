@@ -5,3 +5,7 @@ __pycache__/
 *.zip
 *.csv
 *.parquet
+# noite: detalhe por municipio (boletins) so no modo local/tunel; screenshots de teste
+docs/dados/live/mun/
+docs/dados/live/**/*.tmp
+tests/shots/

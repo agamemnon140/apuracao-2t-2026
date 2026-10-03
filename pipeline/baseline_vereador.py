@@ -21,9 +21,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import cdn  # noqa: E402
+from sintetico.caminhos import BASELINE, BRUTO_TSE
 
-BRUTO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos\2020")
-SAIDA = Path(r"D:\Claude\eleicoes-dados\baseline")
+BRUTO = BRUTO_TSE / "2020"
+SAIDA = BASELINE
 
 
 def recursos() -> list[tuple[str, str]]:

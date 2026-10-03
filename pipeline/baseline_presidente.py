@@ -19,9 +19,10 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd
+from sintetico.caminhos import BASELINE, BRUTO_TSE
 
-BRUTO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
-SAIDA = Path(r"D:\Claude\eleicoes-dados\baseline")
+BRUTO = BRUTO_TSE
+SAIDA = BASELINE
 
 # quem e "esquerda" e "direita" em cada ciclo, pelo numero na urna
 EIXO = {2022: {"esq": "13", "dir": "22"},   # Lula x Bolsonaro

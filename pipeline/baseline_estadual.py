@@ -19,9 +19,10 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd
+from sintetico.caminhos import BASELINE, BRUTO_TSE
 
-BRUTO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
-SAIDA = Path(r"D:\Claude\eleicoes-dados\baseline")
+BRUTO = BRUTO_TSE
+SAIDA = BASELINE
 UFS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
        "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"]
 NAO_CANDIDATO = {"95", "96"}   # branco, nulo
@@ -29,7 +30,9 @@ NAO_CANDIDATO = {"95", "96"}   # branco, nulo
 
 def compila(ano: int, cargo: str = "GOVERNADOR", turno: str = "1") -> Path:
     linhas, t0 = [], time.time()
-    for i, uf in enumerate(UFS, 1):
+    # presidente so existe no arquivo BR (inclui o exterior, UF "ZZ")
+    fontes = ["BR"] if cargo == "PRESIDENTE" else UFS
+    for i, uf in enumerate(fontes, 1):
         arq = BRUTO / str(ano) / f"votacao_secao_{ano}_{uf}.zip"
         if not arq.exists():
             print(f"  {uf}: sem arquivo", flush=True)
@@ -48,9 +51,9 @@ def compila(ano: int, cargo: str = "GOVERNADOR", turno: str = "1") -> Path:
                 # Sem este filtro, o estado entra no modelo com duas eleicoes sobrepostas.
                 if not r["DT_ELEICAO"].endswith(str(ano)):
                     continue
-                linhas.append((uf, r["CD_MUNICIPIO"], int(r["NR_ZONA"]), int(r["NR_SECAO"]),
+                linhas.append((r["SG_UF"], r["CD_MUNICIPIO"], int(r["NR_ZONA"]), int(r["NR_SECAO"]),
                                r["NR_VOTAVEL"], r["NM_VOTAVEL"], int(r["QT_VOTOS"])))
-        print(f"  [{i:>2}/27] {uf}  +{len(linhas)-antes:>8,} linhas  ({time.time()-t0:5.0f}s)", flush=True)
+        print(f"  [{i:>2}/{len(fontes)}] {uf}  +{len(linhas)-antes:>8,} linhas  ({time.time()-t0:5.0f}s)", flush=True)
 
     df = pd.DataFrame(linhas, columns=["uf", "cd_municipio", "zona", "secao",
                                        "nr_votavel", "nm_votavel", "votos"])

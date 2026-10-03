@@ -5,7 +5,7 @@ Fonte: `detalhe_votacao_secao_{ano}.zip`, arquivo BRASIL. A coluna
 precisao de segundo e cobertura de 100%. E a ordem real de chegada da noite -- o que o
 plano original planejava reconstruir com 472 mil requisicoes ao servidor do TSE.
 
-Uso:  .venv/Scripts/python -m pipeline.carimbos [2022|2018] [CARGO]
+Uso:  .venv/Scripts/python -m pipeline.carimbos [2022|2018] [CARGO] [turno]
 """
 from __future__ import annotations
 
@@ -17,9 +17,10 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd
+from sintetico.caminhos import BASELINE, BRUTO_TSE
 
-BRUTO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
-SAIDA = Path(r"D:\Claude\eleicoes-dados\baseline")
+BRUTO = BRUTO_TSE
+SAIDA = BASELINE
 
 
 def extrai(ano: int, cargo: str = "PRESIDENTE", turno: str = "1") -> Path:
@@ -63,4 +64,5 @@ def extrai(ano: int, cargo: str = "PRESIDENTE", turno: str = "1") -> Path:
 if __name__ == "__main__":
     ano = int(sys.argv[1]) if len(sys.argv) > 1 else 2022
     cargo = sys.argv[2] if len(sys.argv) > 2 else "PRESIDENTE"
-    extrai(ano, cargo)
+    turno = sys.argv[3] if len(sys.argv) > 3 else "1"
+    extrai(ano, cargo, turno)

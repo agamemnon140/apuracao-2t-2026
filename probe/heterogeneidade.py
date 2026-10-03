@@ -22,8 +22,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sintetico.caminhos import BASELINE
 
-BASE = Path(r"D:\Claude\eleicoes-dados\baseline")
+BASE = BASELINE
 CHAVE = ["uf", "cd_municipio", "zona", "secao"]
 MIN_SECOES = 10          # abaixo disso, "ordem interna" nao quer dizer nada
 

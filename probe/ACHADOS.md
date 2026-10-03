@@ -690,3 +690,56 @@ apurado já se sabe a **forma da Câmara** (bancadas com erro médio de ~1,6 cad
 - **Régua do Quociente** ganhou: estadual, mínimos para eleger por agremiação (QE, 10% QE,
   20% QE de sobra, corte prático), votos contabilizados, ritmo (fração apurada do candidato ÷
   fração do estado, 100 = sem vento) e os 3 redutos de cada candidato com nome de município.
+
+---
+
+# Âncora demográfica, alvo e needle hierárquico (27/09/2026)
+
+## Os dados de 2026 já estão abertos
+
+`consulta_cand_2026`, `eleitorado_local_votacao_2026` e `perfil_eleitor_secao_2026_{UF}` saíram no
+CDN (baixados por `sintetico/baixa.py 2026`). Consequências:
+
+- **Códigos de eleição de 2026**: `CD_ELEICAO` 6257 (presidente) e 6259 (estaduais). O pleito
+  ainda não: o `ele-c.json` servido hoje (gerado 12/05) não tem a geral de 2026.
+  `runner.coletor --manual <pleito>` cobre o caso de o índice atrasar.
+- **Presidente**: 13 Lula (PT) × 22 Flávio Bolsonaro (PL), mais 11 na urna (o 28 tem duas
+  candidaturas: Marçal e Avalanche; fica a última no config).
+- **Universo 2026**: 517.179 seções (499.248 urnas somando as agregadas), 158,7 milhões de
+  aptos. 90% das seções e 93% dos aptos têm par exato em 2022; 93,5% estão em locais que já
+  existiam — por isso a cascata da âncora é local → município → UF, não município direto.
+- **Números de partido mudaram de dono** (14 PTB→MISSÃO, 20 PSC→PODE, 35 PMB→DEMOCRATA, 25 PRD
+  novo); federações novas PRD/SOLIDARIEDADE e UNIÃO/PP. `config/partidos.json` é por ano.
+
+## A deriva da calibração tem de ser só demográfica
+
+Primeira versão da âncora de calibração (2018→2022) usou `pred_2022 − pred_2018` e deu **+5,5
+pontos** de deriva — porque `pred_2022` foi ajustado nos votos de 2022: a resposta vazava. Com os
+coeficientes de 2018 sobre a demografia de 2022, a deriva cai para **−2,2**, mesma ordem dos
+−1,9 de 2022→2026. O replay passa a ser exigente: o needle tem de descobrir sozinho a virada
+real de +8 pontos entre a âncora e o 1º turno de 2022.
+
+## O feed municipal tem um teto — e ele não é a ordem de chegada
+
+Só com totais municipais (sem boletins), o hierárquico erra −1,6 a −2,4 pontos entre 5% e 30%.
+Duas causas medidas:
+
+1. **Quais seções já entraram.** Tratando o apurado do município como amostra uniforme dele, o
+   efeito municipal herda o viés de ordem (centro primeiro). Usar a ordem de chegada de 2018 como
+   palpite de quais seções o feed contou corta o viés pela metade (λ=1 melhor que 0,6 e 0,3).
+2. **O que o total não mostra.** Teste com oráculo — o needle recebe a ordem REAL de 2022, ou
+   seja, sabe exatamente quais seções o feed contou — ainda deixa −0,4 a −0,6: dentro da cidade o
+   swing varia com o perfil da seção, e o agregado não revela a inclinação. Só o boletim fecha
+   isso (com 100% dos boletins: ±0,1–0,3 a partir de 2%).
+
+Por isso o crawler de boletins subiu de "opcional" para peça central. Acrescentar o nível da
+própria âncora como covariável (o `beta` do needle v1) ajudou pouco, mas na direção certa.
+
+## Crawler de boletins: o ritmo cabe na noite
+
+Teste real na árvore de 2024 (AC, 400 seções): **66 seções/s** (~130 requisições/s), concorrência
+subindo sozinha até 16 sem um único 403, 399/400 boletins válidos (1 ainda "Recebida"). Nesse
+ritmo as ~500 mil urnas levam ~2 h. O `imgbu.dat` é ASN.1 com o texto do boletim em latin-1: o
+parser lê o texto por regex e confere somas (candidatos = nominais; nominais + legenda + brancos
++ nulos = total apurado). Nome longo quebra em duas linhas (`JAQUELINE DA KASA BRANCA---` /
+`--->  20222  0001`) — tratado.

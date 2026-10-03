@@ -16,9 +16,10 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd
+from sintetico.caminhos import BASELINE, BRUTO_TSE
 
-BASE = Path(r"D:\Claude\eleicoes-dados\baseline")
-BRUTO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
+BASE = BASELINE
+BRUTO = BRUTO_TSE
 CHAVE = ["uf", "cd_municipio", "zona", "secao"]
 MARCOS = [0.5, 1, 2, 5, 10, 20, 30, 50, 70, 90, 100]
 

@@ -9,7 +9,7 @@ Deriva demografica por municipio:
 Incumbencia NAO e estimavel com um ciclo so; entra como cenario declarado -- um
 deslocamento no log-odds da direita, com a tabela de conversao para pontos nos validos.
 
-Saida: sintetico/projecao_2026.json.
+Saida: sintetico/projecao_2026.json e sintetico/pred_2026.parquet (por secao).
 
 Uso:  .venv/Scripts/python -m sintetico.projecao_2026
 """
@@ -130,12 +130,17 @@ def main() -> int:
         X = X.fillna(X.median(numeric_only=True))
         return (X.to_numpy() - mu) / sd
 
-    def agrega(df, shift_dir=0.0):
+    def prob_secoes(df, shift_dir=0.0):
+        """(n, 3) probabilidades lula/bolsonaro/nenhum por secao."""
         Xz = matriz(df)
         eta = Xz @ coef.T + inter
         eta[:, 1] += shift_dir
         eta -= eta.max(1, keepdims=True)
         p = np.exp(eta); p /= p.sum(1, keepdims=True)
+        return p
+
+    def agrega(df, shift_dir=0.0):
+        p = prob_secoes(df, shift_dir)
         aptos = df["aptos"].to_numpy(float)
         tot = (p * aptos[:, None]).sum(0)
         sh = tot / tot.sum()
@@ -147,6 +152,13 @@ def main() -> int:
     print(f"2022 (modelo): esquerda {100 * base22['validos_esq']:.2f}% dos validos")
     print(f"2026 (demografia): esquerda {100 * proj26['validos_esq']:.2f}% dos validos "
           f"({100 * (proj26['validos_esq'] - base22['validos_esq']):+.2f}pp)")
+
+    # previsao por secao (chave = secoes de 2022; a deriva e municipal)
+    p26 = prob_secoes(proj)
+    pred = proj[["uf", "cd_municipio_tse", "zona", "secao", "aptos"]].copy()
+    pred["p_lula"], pred["p_bolsonaro"], pred["p_nenhum"] = p26[:, 0], p26[:, 1], p26[:, 2]
+    pred.to_parquet(SAIDA / "pred_2026.parquet", index=False)
+    print(f"gravado pred_2026.parquet ({len(pred):,} secoes)")
 
     cenarios = {}
     for s in [-0.30, -0.20, -0.10, 0.0, 0.10, 0.20, 0.30]:

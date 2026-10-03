@@ -17,9 +17,10 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd
+from sintetico.caminhos import BASELINE, BRUTO_TSE
 
-BRUTO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
-SAIDA = Path(r"D:\Claude\eleicoes-dados\baseline")
+BRUTO = BRUTO_TSE
+SAIDA = BASELINE
 UFS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
        "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"]
 CARGO = {"FEDERAL": "DEPUTADO FEDERAL", "ESTADUAL": ("DEPUTADO ESTADUAL", "DEPUTADO DISTRITAL")}

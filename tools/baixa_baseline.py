@@ -15,8 +15,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cdn  # noqa: E402
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parents[1]))
+from sintetico.caminhos import BRUTO_TSE
 
-DESTINO = Path(r"D:\Claude\eleicoes-dados\raw\dadosabertos")
+DESTINO = BRUTO_TSE
 FAMILIAS = ("votacao_secao", "detalhe_votacao_secao")
 
 

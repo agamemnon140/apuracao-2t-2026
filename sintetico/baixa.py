@@ -58,6 +58,16 @@ ALVOS = [
     (f"{TSE_CDN}/perfil_eleitor_secao/perfil_eleitor_secao_2022_{uf}.zip",
      BRUTO_TSE / "2022" / "perfil_secao" / f"perfil_eleitor_secao_2022_{uf}.zip")
     for uf in UFS
+] + [
+    # 2026: universo de secoes/locais, candidatos e perfil por secao
+    (f"{TSE_CDN}/eleitorado_locais_votacao/eleitorado_local_votacao_2026.zip",
+     BRUTO_TSE / "2026" / "eleitorado_local_votacao_2026.zip"),
+    (f"{TSE_CDN}/consulta_cand/consulta_cand_2026.zip",
+     BRUTO_TSE / "2026" / "consulta_cand_2026.zip"),
+] + [
+    (f"{TSE_CDN}/perfil_eleitor_secao/perfil_eleitor_secao_2026_{uf}.zip",
+     BRUTO_TSE / "2026" / "perfil_secao" / f"perfil_eleitor_secao_2026_{uf}.zip")
+    for uf in UFS
 ]
 
 
@@ -89,8 +99,11 @@ def baixa(url: str, destino) -> str:
 
 
 def main() -> int:
+    filtro = sys.argv[1] if len(sys.argv) > 1 else ""
     falhas = 0
     for url, destino in ALVOS:
+        if filtro and filtro not in destino.name:
+            continue
         t0 = time.time()
         r = baixa(url, destino)
         print(f"{destino.name:60s} {r}  [{time.time() - t0:.0f}s]", flush=True)

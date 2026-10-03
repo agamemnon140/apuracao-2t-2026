@@ -20,9 +20,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cdn  # noqa: E402
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parents[1]))
+from sintetico.caminhos import DADOS
 
 URL = "https://resultados.tse.jus.br/oficial/comum/config/ele-c.json"
-RETRATO = Path(r"D:\Claude\eleicoes-dados\ele-c.retrato.json")
+RETRATO = DADOS / "ele-c.retrato.json"
 
 
 def pleitos() -> dict:
