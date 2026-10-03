@@ -17,6 +17,7 @@
   const SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#1c5cab"];
 
   const S = { uf: null, mun: null, zona: null, local: null, secao: null, cargo: "pr", turno: 1, eixo: false, metrica: null, lente: "esq" };
+  let FILTRO = "", ORDEM = "apt";          // busca e ordenacao da lista (nao vao para a URL)
   let LIVE_MUN = null;
   let META, BR, LIVE = null, LIVE_UF = {}, UFD = null, MUND = null, SECD = null, DEP = null, DEPM = null, GEO = {};
 
@@ -35,6 +36,7 @@
     history.replaceState(null, "", "#" + h.toString());
   }
   function vai(mud) {
+    if (["uf", "mun", "zona", "local", "secao"].some((k) => k in mud)) FILTRO = "";
     Object.assign(S, mud);
     gravaHash();
     render();
@@ -427,28 +429,55 @@
     const nomeMet = (metricas().find((m) => m[0] === S.metrica) || ["", "métrica"])[1];
     if (nv === "br") {
       cab = "Estado";
-      linhas = Object.entries(BR.ufs).map(([uf, r]) => ({ id: uf, nome: NOME_UF[uf] || uf, apt: r.aptos26, v22: v22col(r), v: col(r, uf, "uf"), cor: cor(valorMetrica(r, uf, "uf")), ir: () => vai({ uf, mun: null, zona: null, local: null, secao: null }) }));
+      linhas = Object.entries(BR.ufs).map(([uf, r]) => ({ id: uf, nome: NOME_UF[uf] || uf, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), mvv: (valorMetrica(r, uf, "uf") || {}).v, v: col(r, uf, "uf"), cor: cor(valorMetrica(r, uf, "uf")), ir: () => vai({ uf, mun: null, zona: null, local: null, secao: null }) }));
     } else if (nv === "uf") {
       cab = "Município";
-      linhas = Object.entries(UFD.mun).map(([cd, r]) => ({ id: cd, nome: r.nome, apt: r.aptos26, v22: v22col(r), v: col(r, cd, "mun"), cor: cor(valorMetrica(r, cd, "mun")), ir: () => vai({ mun: cd, zona: null, local: null, secao: null }) }));
+      linhas = Object.entries(UFD.mun).map(([cd, r]) => ({ id: cd, nome: r.nome, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), mvv: (valorMetrica(r, cd, "mun") || {}).v, v: col(r, cd, "mun"), cor: cor(valorMetrica(r, cd, "mun")), ir: () => vai({ mun: cd, zona: null, local: null, secao: null }) }));
     } else if (nv === "mun" && MUND) {
       cab = "Zona";
-      linhas = Object.entries(MUND.zonas).map(([z, r]) => ({ id: z, nome: `Zona ${z} · ${r.ns} urnas`, apt: r.aptos26, v22: v22col(r), v: col(r, null, "zona"), cor: cor(valorMetrica(r, null, "zona")), ir: () => vai({ zona: z, local: null, secao: null }) }));
+      linhas = Object.entries(MUND.zonas).map(([z, r]) => ({ id: z, nome: `Zona ${z} · ${r.ns} urnas`, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), mvv: (valorMetrica(r, null, "zona") || {}).v, v: col(r, null, "zona"), cor: cor(valorMetrica(r, null, "zona")), ir: () => vai({ zona: z, local: null, secao: null }) }));
     } else if (nv === "zona" && MUND) {
       cab = "Local de votação";
-      linhas = MUND.locais.filter((l) => String(l.z) === String(S.zona)).map((l) => ({ id: l.l, nome: (l.nome || "Local " + l.l) + (l.so22 ? " (só 2022)" : ""), apt: l.aptos26, v22: v22col(l), v: col(l, null, "local"), cor: cor(valorMetrica(l, null, "local")), ir: () => vai({ local: String(l.l), secao: null }) }));
+      linhas = MUND.locais.filter((l) => String(l.z) === String(S.zona)).map((l) => ({ id: l.l, nome: (l.nome || "Local " + l.l) + (l.so22 ? " (só 2022)" : ""), apt: l.aptos26, v22: v22col(l), v22n: votos22(l), mvv: (valorMetrica(l, null, "local") || {}).v, v: col(l, null, "local"), cor: cor(valorMetrica(l, null, "local")), ir: () => vai({ local: String(l.l), secao: null }) }));
     } else if ((nv === "local" || nv === "secao") && SECD) {
       cab = "Seção";
       const i = SECD.cols.indexOf("nr_local");
       linhas = SECD.rows.filter((r) => String(r[i]) === String(S.local)).map((r) => {
         const o = {}; SECD.cols.forEach((k, j) => { o[k] = r[j]; });
-        return { id: r[0], nome: `Seção ${r[0]}` + (o.n_agreg > 1 ? ` (+${o.n_agreg - 1} agregada)` : ""), apt: o.aptos26, v22: v22col(o), v: col(o, null, "secao"), cor: cor(valorMetrica(o, null, "secao")), ir: () => vai({ secao: String(r[0]) }) };
+        return { id: r[0], nome: `Seção ${r[0]}` + (o.n_agreg > 1 ? ` (+${o.n_agreg - 1} agregada)` : ""), apt: o.aptos26, v22: v22col(o), v22n: votos22(o), mvv: (valorMetrica(o, null, "secao") || {}).v, v: col(o, null, "secao"), cor: cor(valorMetrica(o, null, "secao")), ir: () => vai({ secao: String(r[0]) }) };
       });
     }
-    linhas.sort((a, b) => (b.apt || 0) - (a.apt || 0));
-    el.innerHTML = linhas.length ? `<table><thead><tr><th>${cab} <span style="font-weight:400;color:var(--muda)">· toque para abrir</span></th><th class="num">votos 2022</th><th class="num">aptos 2026</th><th class="num" title="${nomeMet}">${S.metrica === "dalvo" ? "× alvo" : "mapa"}</th><th></th></tr></thead><tbody>${
-      linhas.map((l, k) => `<tr class="clica" data-k="${k}"><td><span class="barrinha" style="width:8px;background:${l.cor}"></span> ${l.nome}</td><td class="num">${l.v22 || "–"}</td><td class="num">${fmt.format(l.apt || 0)}</td><td class="num">${l.v}</td><td class="seta">›</td></tr>`).join("")}</tbody></table>` : "";
-    el.querySelectorAll("tr.clica").forEach((tr) => tr.addEventListener("click", () => linhas[+tr.dataset.k].ir()));
+    if (!linhas.length) { el.innerHTML = ""; return; }
+    const chata = (x) => String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    el.innerHTML = `<div class="lista-barra">
+        <input id="lb-busca" type="search" placeholder="buscar ${cab.toLowerCase()} por nome ou número" aria-label="buscar na lista">
+        <select id="lb-ordem" aria-label="ordenar lista">
+          <option value="apt">maiores (aptos 2026)</option>
+          <option value="nome">A → Z</option>
+          <option value="v22">mais votos em 2022</option>
+          <option value="mv">${S.metrica === "dalvo" ? "× alvo (maior → menor)" : "métrica do mapa"}</option>
+        </select></div>
+      <table><thead><tr><th>${cab} <span style="font-weight:400;color:var(--muda)">· toque para abrir</span></th><th class="num">votos 2022</th><th class="num">aptos 2026</th><th class="num" title="${nomeMet}">${S.metrica === "dalvo" ? "× alvo" : "mapa"}</th><th></th></tr></thead><tbody id="lb-corpo"></tbody></table>`;
+    const busca = el.querySelector("#lb-busca"), ordem = el.querySelector("#lb-ordem");
+    busca.value = FILTRO;
+    ordem.value = ORDEM;
+    let visiveis = [];
+    const corpo = () => {
+      const q = chata(FILTRO.trim());
+      visiveis = linhas.filter((l) => !q || chata(l.nome + " " + l.id).includes(q));
+      const vn = (x) => (x == null || isNaN(x) ? -Infinity : +x);
+      if (ORDEM === "nome") visiveis.sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt", { numeric: true }));
+      else if (ORDEM === "v22") visiveis.sort((a, b) => vn(b.v22n) - vn(a.v22n));
+      else if (ORDEM === "mv") visiveis.sort((a, b) => vn(b.mvv) - vn(a.mvv));
+      else visiveis.sort((a, b) => (b.apt || 0) - (a.apt || 0));
+      const tb = el.querySelector("#lb-corpo");
+      tb.innerHTML = visiveis.map((l, k) => `<tr class="clica" data-k="${k}"><td><span class="barrinha" style="width:8px;background:${l.cor}"></span> ${l.nome}</td><td class="num">${l.v22 || "–"}</td><td class="num">${fmt.format(l.apt || 0)}</td><td class="num">${l.v}</td><td class="seta">›</td></tr>`).join("")
+        || `<tr><td colspan="5" style="color:var(--muda)">nada encontrado — limpe a busca</td></tr>`;
+      tb.querySelectorAll("tr.clica").forEach((tr) => tr.addEventListener("click", () => visiveis[+tr.dataset.k].ir()));
+    };
+    corpo();
+    busca.addEventListener("input", (e) => { FILTRO = e.target.value; corpo(); });
+    ordem.addEventListener("change", (e) => { ORDEM = e.target.value; corpo(); });
   }
 
   // ------------------------------------------------------------ paineis

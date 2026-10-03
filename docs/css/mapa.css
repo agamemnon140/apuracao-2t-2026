@@ -95,6 +95,11 @@ a { color: var(--realce); }
 .legenda-mapa .rampa span { width: 22px; }
 .lista { margin-top: 10px; max-height: 46vh; overflow: auto; border-top: 1px solid var(--grade); }
 .lista .seta { color: var(--muda); text-align: right; width: 18px; }
+.lista-barra { display: flex; gap: 8px; padding: 8px 0 6px; position: sticky; top: 0; background: var(--sup); z-index: 2; }
+.lista-barra input { flex: 1; min-width: 0; padding: 8px 10px; font: inherit; font-size: 14px;
+  border: 1px solid var(--borda); border-radius: 8px; background: var(--plano); color: var(--tinta); }
+.lista-barra select { font: inherit; font-size: 13px; padding: 6px 6px; border-radius: 8px;
+  border: 1px solid var(--borda); background: var(--sup); color: var(--tinta-2); max-width: 46%; }
 .grupo.lente button[aria-selected="true"] { background: var(--sup); color: var(--tinta); box-shadow: inset 0 -3px 0 var(--realce); font-weight: 650; }
 @media (max-width: 900px) {
   .mapa-caixa { display: flex; flex-direction: column; }

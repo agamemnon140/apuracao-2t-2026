@@ -21,7 +21,7 @@ Estado da noite em `D:\Claude\eleicoes-dados\live\` (config, feed bruto, boletin
 2. **Ensaio completo sem rede** (replay de 2022 em velocidade 20×, ~20 min):
    ```sh
    py -m runner.ciclo --modo replay --turno 1 --velocidade 20 --inicio 17:00 --intervalo 30
-   py -m http.server -d docs 8000     # outra janela; abrir http://localhost:8000/mapa.html
+   py -m tools.serve_docs     # outra janela; abrir http://localhost:8000/mapa.html
    ```
    Depois do ensaio, volte ao estado público de véspera (apuração zerada, candidatos de
    2026 na tela): `py -m runner.aguardando`.
@@ -58,7 +58,7 @@ py -m runner.bu_crawler
 py -m runner.ciclo --modo ao-vivo --turno 1 --publicar pages --intervalo 60
 
 # 3. (opcional) servidor local + túnel: needle a cada minuto e mapa até a seção
-py -m http.server -d docs 8000
+py -m tools.serve_docs
 D:\Claude\eleicoes-dados\ferramentas\cloudflared.exe tunnel --url http://localhost:8000 --no-autoupdate
 # divulgar: https://agamemnon140.github.io/apuracao-2026/mapa.html?live=https://<tunel>/dados/live
 ```

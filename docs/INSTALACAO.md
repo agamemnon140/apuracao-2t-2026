@@ -40,7 +40,7 @@ para o mesmo pendrive (sem a `.venv`, que não sobrevive à mudança de máquina
    ```sh
    .venv\Scripts\python -m runner.ciclo --modo replay --turno 1 --velocidade 1 --inicio 18:32 --intervalo 5 --ciclos 1 --lag 2
    .venv\Scripts\python -m runner.aguardando
-   .venv\Scripts\python -m http.server 8000 -d docs     # abrir http://localhost:8000/mapa.html
+   .venv\Scripts\python -m tools.serve_docs            # abrir http://localhost:8000/mapa.html
    ```
 
 7. **Opcional — deputado por seção** (painel candidato × urna no modo local/túnel;
