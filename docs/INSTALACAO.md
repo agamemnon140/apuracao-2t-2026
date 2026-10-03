@@ -43,6 +43,36 @@ para o mesmo pendrive (sem a `.venv`, que não sobrevive à mudança de máquina
    .venv\Scripts\python -m http.server 8000 -d docs     # abrir http://localhost:8000/mapa.html
    ```
 
+## Quais dados são esses, exatamente
+
+`tools/empacota_dados.py` copia (e `tools/checa_preparo.py` confere) tudo o que a noite lê:
+
+| Pasta/arquivo | Tamanho | O que é | Se faltar |
+|---|---|---|---|
+| `sintetico/ancora_2026.parquet` | 36 MB | a âncora: 2022 por urna + deriva demográfica | precondição de tudo |
+| `sintetico/alvo_2026_t1.*` (`_t2`) | 60 MB | alvo de 50%+1 por urna | mapa/needle sem alvo |
+| `sintetico/` demais | ~420 MB | pred/base/universo (regenerações e 2º turno) | só para refazer âncora/alvo |
+| `baseline/calib_*.json` | <1 MB | incertezas calibradas (sigma, k_p, ESS) | needle sem probabilidade |
+| `baseline/*.parquet` | ~460 MB | 2018/2022 por seção + carimbos | replay de teste e deputados-replay |
+| `live/config_2026.json`, `cm-*.json`, `cs/3220/` | 12 MB | códigos do pleito 3220 e malhas de 2026 | o coletor rebaixa em ~2 min com internet |
+| `ferramentas/cloudflared.exe` | 55 MB | túnel (plano B de publicação) | só o túnel |
+| `ele-c.retrato.json` | <1 MB | memória do vigia do índice | nada crítico |
+
+**Na noite, nada mais é baixado além do feed do TSE** (coletor e crawler baixam sozinhos).
+O `raw/` (14 GB de zips do TSE/IBGE) só serve para RECONSTRUIR as bases do zero — não leve.
+
+**Sem pendrive?** Rode o empacotador para uma pasta e compacte-a num zip para subir ao seu drive:
+```sh
+.venv\Scripts\python -m tools.empacota_dados D:\Claude	ransporte\eleicoes-dados
+tar -a -c -f D:\Claude	ransporte\dados-noite.zip -C D:\Claude	ransporte eleicoes-dados
+```
+ou rode o empacotador direto para uma pasta sincronizada (Drive/OneDrive). ~1,1 GB.
+
+**Reconstruir do zero** (horas; só se os dados se perderem): `sintetico/baixa.py` e
+`tools/baixa_baseline.py` baixam os brutos públicos (TSE dados abertos + IBGE, ~6 GB), e a
+ordem de regeneração está no topo do `RUNBOOK.md` (projecao_2026 → ancora → alvo → gera_estatico),
+com os baselines em `pipeline/baseline_*.py` e `pipeline/carimbos.py`. Não é plano para véspera.
+
 ## O que mais a noite precisa
 
 - **Internet** (feed do TSE e crawler de boletins). Hotspot de celular como plano B de IP.
