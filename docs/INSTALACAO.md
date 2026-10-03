@@ -43,6 +43,10 @@ para o mesmo pendrive (sem a `.venv`, que não sobrevive à mudança de máquina
    .venv\Scripts\python -m http.server 8000 -d docs     # abrir http://localhost:8000/mapa.html
    ```
 
+7. **Opcional — deputado por seção** (painel candidato × urna no modo local/túnel;
+   não vai ao Pages): `py -m web.gera_estatico --depsec` (~5 min, 666 MB em `docs/dados/depsec/`),
+   ou copie essa pasta junto com o repo.
+
 ## Quais dados são esses, exatamente
 
 `tools/empacota_dados.py` copia (e `tools/checa_preparo.py` confere) tudo o que a noite lê:

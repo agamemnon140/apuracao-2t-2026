@@ -396,10 +396,55 @@ def escreve_deputados(base: Base, uf: str) -> None:
         grava(DOCS / "dep" / uf / f"{cd}.json", v)
 
 
+
+# ------------------------------------------------------------------ deputados por secao
+def escreve_depsec(uf: str) -> None:
+    """Detalhe candidato x SECAO de deputado: docs/dados/depsec/{mun}/{zona}_{df|de}.json.
+
+    ~50 M linhas no pais (~400 MB de JSON): fica FORA do git (.gitignore) e so e servido
+    pelo modo local/tunel. Formato: {"sec": {secao: [[nr, votos]...]}}, com os votos de
+    legenda do partido como entradas "L<partido>". Gerar: web.gera_estatico --depsec."""
+    from collections import defaultdict
+    for cargo, arqc, arqp in [("df", "depfederal_candidato_secao_2022_t1.parquet",
+                               "depfederal_partido_secao_2022_t1.parquet"),
+                              ("de", "depestadual_candidato_secao_2022_t1.parquet",
+                               "depestadual_partido_secao_2022_t1.parquet")]:
+        c = pd.read_parquet(BASELINE / arqc, filters=[("uf", "==", uf)])
+        if c.empty:
+            continue
+        pt = pd.read_parquet(BASELINE / arqp, filters=[("uf", "==", uf)])
+        for d in (c, pt):
+            d["cd_mun"] = d["cd_municipio"].astype(int)
+        c["pp"] = c["nr"].str[:2]
+        nom = c.groupby(["cd_mun", "zona", "secao", "pp"])["votos"].sum()
+        pt = pt.groupby(["cd_mun", "zona", "secao", "partido"])["votos"].sum()
+        leg = (pt - nom.reindex(pt.index, fill_value=0)).clip(lower=0)
+        leg = leg[leg > 0]
+        por_zona: dict = defaultdict(lambda: defaultdict(list))
+        for m, z, sec_, nr, v in zip(c["cd_mun"], c["zona"], c["secao"], c["nr"], c["votos"]):
+            por_zona[(m, z)][str(sec_)].append([nr, int(v)])
+        for (m, z, sec_, pp), v in leg.items():
+            por_zona[(m, z)][str(sec_)].append(["L" + pp, int(v)])
+        for (m, z), secs in por_zona.items():
+            for k in secs:
+                secs[k].sort(key=lambda x: -x[1])
+            grava(DOCS / "depsec" / str(m) / f"{z}_{cargo}.json", {"sec": secs})
+
+
 def main() -> int:
     a = sys.argv[1:]
     so = a[a.index("--so") + 1].split(",") if "--so" in a else None
     t0 = time.time()
+    if "--depsec" in a:
+        u26 = pd.read_parquet(SAIDA / "municipios_2026.parquet", columns=["uf"])
+        for uf in (so or sorted(u26["uf"].unique())):
+            if uf == "ZZ":
+                continue
+            escreve_depsec(uf)
+            print(f"  depsec {uf} ok  [{time.time() - t0:.0f}s]", flush=True)
+        tam = sum(f.stat().st_size for f in (DOCS / "depsec").rglob("*.json")) / 1e6
+        print(f"depsec: {tam:.0f} MB (fora do git; servido so no modo local/tunel)")
+        return 0
     base = Base()
     ufs = so or sorted(base.u26["uf"].unique())
     if not so:

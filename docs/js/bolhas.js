@@ -21,13 +21,16 @@
     const W = canvas.parentElement.clientWidth || 300;
     const cols = esc.colunas;
     const s = W / cols;
-    // pontos por categoria (arredondamento que preserva o total)
+    // pontos por categoria (arredondamento que preserva o total); c.ap = parte APURADA
+    // da categoria (pontos solidos; o resto, projetado, sai esmaecido). ap ausente = tudo solido.
     let acum = 0, acumPts = 0;
     const faixas = [];
     for (const c of cats) {
       acum += c.n || 0;
       const fim = Math.round(acum / esc.porPonto);
-      faixas.push({ ini: acumPts, fim, cat: c });
+      const nAp = c.ap == null ? (c.n || 0) : Math.min(c.ap, c.n || 0);
+      const solidoAte = Math.min(fim, acumPts + Math.round(nAp / esc.porPonto));
+      faixas.push({ ini: acumPts, fim, solidoAte, cat: c });
       acumPts = fim;
     }
     const rowsMax = Math.ceil(esc.pontosMax / cols);
@@ -42,13 +45,18 @@
     const quadrado = s < 4;
     for (const f of faixas) {
       ctx.fillStyle = f.cat.cor;
-      ctx.beginPath();
-      for (let k = f.ini; k < f.fim; k++) {
-        const x = (k % cols) * s + s / 2, y = Math.floor(k / cols) * s + s / 2;
-        if (quadrado) ctx.rect(x - s * 0.45, y - s * 0.45, s * 0.9, s * 0.9);
-        else { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2); }
+      for (const [ini, fim, alfa] of [[f.ini, f.solidoAte, 1], [f.solidoAte, f.fim, 0.38]]) {
+        if (fim <= ini) continue;
+        ctx.globalAlpha = alfa;
+        ctx.beginPath();
+        for (let k = ini; k < fim; k++) {
+          const x = (k % cols) * s + s / 2, y = Math.floor(k / cols) * s + s / 2;
+          if (quadrado) ctx.rect(x - s * 0.45, y - s * 0.45, s * 0.9, s * 0.9);
+          else { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2); }
+        }
+        ctx.fill();
       }
-      ctx.fill();
+      ctx.globalAlpha = 1;
     }
     return function hit(px, py) {
       const k = Math.floor(py / s) * cols + Math.floor(px / s);

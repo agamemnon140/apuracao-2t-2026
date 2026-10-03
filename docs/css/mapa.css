@@ -147,6 +147,11 @@ a { color: var(--realce); }
 .tabela-caixa td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--grade); white-space: nowrap; }
 .tabela-caixa td:first-child { white-space: normal; }
 .tabela-caixa i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.selo { font-size: 11px; font-weight: 650; padding: 1px 7px; border-radius: 999px; vertical-align: 2px; letter-spacing: .02em; }
+.selo-proj { color: var(--tinta-2); border: 1px dashed var(--muda); }
+.selo-parcial { color: #8a5a00; background: color-mix(in srgb, #eda100 18%, transparent); }
+.selo-apur { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.projetado { color: var(--tinta-2); font-style: italic; }
 .delta-pos { color: var(--ok); }
 .delta-neg { color: var(--ruim); }
 

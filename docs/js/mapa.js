@@ -99,15 +99,16 @@
     if (S.turno === 2 && !(lv && lv.proj)) {         // 2o turno: terceiros se repartem entre os dois campos
       const v = e + d + o; e = v * e / (e + d); d = v - e; o = 0;
     }
+    const ap = lv && lv.apur ? lv.apur : [0, 0, 0, 0, 0];
     const cats = S.eixo
-      ? [{ nome: "Esquerda", cor: META.cores_eixo.esquerda, n: e, valido: true },
-         { nome: "Direita", cor: META.cores_eixo.direita, n: d, valido: true },
-         { nome: "Outros", cor: META.cores.outros, n: o, valido: true }]
-      : [{ nome: c.esq[1], nr: c.esq[0], cor: corPartido(c.esq[0], "2026"), n: e, valido: true },
-         { nome: c.dir[1], nr: c.dir[0], cor: corPartido(c.dir[0], "2026"), n: d, valido: true },
-         { nome: "Outros", cor: META.cores.outros, n: o, valido: true }];
-    cats.push({ nome: "Brancos + nulos", cor: css("--nulo-v"), n: bn, extra: true });
-    cats.push({ nome: "Abstenção", cor: css("--abst-v"), n: ab, extra: true });
+      ? [{ nome: "Esquerda", cor: META.cores_eixo.esquerda, n: e, ap: ap[0], valido: true },
+         { nome: "Direita", cor: META.cores_eixo.direita, n: d, ap: ap[1], valido: true },
+         { nome: "Outros", cor: META.cores.outros, n: o, ap: ap[2], valido: true }]
+      : [{ nome: c.esq[1], nr: c.esq[0], cor: corPartido(c.esq[0], "2026"), n: e, ap: ap[0], valido: true },
+         { nome: c.dir[1], nr: c.dir[0], cor: corPartido(c.dir[0], "2026"), n: d, ap: ap[1], valido: true },
+         { nome: "Outros", cor: META.cores.outros, n: o, ap: ap[2], valido: true }];
+    cats.push({ nome: "Brancos + nulos", cor: css("--nulo-v"), n: bn, ap: ap[3], extra: true });
+    cats.push({ nome: "Abstenção", cor: css("--abst-v"), n: ab, ap: ap[4], extra: true });
     return cats;
   }
 
@@ -139,7 +140,9 @@
       cands = ord.map(([nr]) => nome[nr] || [nr, nr, ""]);
       vet = ord.map((x) => x[1]);
     }
-    return categorias(vet.concat([u.b, u.n, u.a]), cands, "2026");
+    const ccBU = categorias(vet.concat([u.b, u.n, u.a]), cands, "2026");
+    if (ccBU) for (const c of ccBU) c.ap = c.n;        // boletim de urna: tudo apurado
+    return ccBU;
   }
   /* governador/senador na UF: vetor projetado ao vivo x validos esperados da ancora */
   function catsEstadualLive(u) {
@@ -150,8 +153,10 @@
     const lista = (UFD.cands[S.cargo] && UFD.cands[S.cargo]["2026"]) || [];
     const nome = Object.fromEntries(lista.map((c) => [c[0], c]));
     const ord = Object.entries(r.proj).sort((a, b) => b[1] - a[1]);
-    return categorias(ord.map(([, sh]) => Math.round(sh * val)).concat([Math.round(bn / 2), Math.round(bn / 2), ab]),
+    const ccEst = categorias(ord.map(([, sh]) => Math.round(sh * val)).concat([Math.round(bn / 2), Math.round(bn / 2), ab]),
       ord.map(([nr]) => nome[nr] || [nr, nr, ""]), "2026");
+    if (ccEst) for (const c of ccEst) c.ap = 0;        // projecao do needle estadual
+    return ccEst;
   }
 
   // ------------------------------------------------------------ unidade corrente
@@ -193,6 +198,7 @@
     if (nv === "br") {
       const p = LIVE.pr, apt = BR && BR.br.aptos26;
       return { pct: LIVE.pct_secoes, proj: [p.proj.esq, p.proj.dir, p.proj.out, p.proj.bn, Math.max(0, (apt || p.proj.comp) - p.proj.comp)],
+        apur: [p.apur.esq, p.apur.dir, Math.max(0, p.apur.val - p.apur.esq - p.apur.dir), p.apur.bn || 0, 0],
         sh_esq: p.sh_esq, sh_dir: p.sh_dir, apur_esq: p.apur.val ? 100 * p.apur.esq / p.apur.val : null, margem: p.margem, sigma: p.sigma };
     }
     if (nv === "uf") {
@@ -210,6 +216,7 @@
       const val = g("proj_val"), comp = g("proj_comp"), e = g("proj_esq"), dd = g("proj_dir");
       const apt = (UFD && UFD.mun[S.mun] && UFD.mun[S.mun].aptos26) || comp;
       return { pct: 100 * g("st") / Math.max(1, g("ts")), proj: [e, dd, val - e - dd, comp - val, Math.max(0, apt - comp)],
+        apur: [g("apur_esq"), g("apur_dir"), Math.max(0, g("apur_val") - g("apur_esq") - g("apur_dir")), 0, 0],
         sh_esq: 100 * e / val, sh_dir: 100 * dd / val, apur_esq: g("apur_val") ? 100 * g("apur_esq") / g("apur_val") : null };
     }
     return null;
@@ -218,6 +225,14 @@
   // ------------------------------------------------------------ metricas do mapa
   function idxCand(cands, nr) { return cands.findIndex((c) => c[0] === nr); }
   const nomeLente = () => (S.lente === "esq" ? META.campos_2026.esq[1] : META.campos_2026.dir[1]);
+  /* votos totais de 2022 (1º turno): soma do vetor menos a abstenção (= comparecimento) */
+  function votos22(r) {
+    const v = r && r.pr22t1;
+    if (!v) return null;
+    let t = 0;
+    for (let i = 0; i < v.length - 1; i++) t += v[i] || 0;
+    return t;
+  }
   /* fatia do candidato da lente nos VALIDOS (%), ao vivo quando ha, senao projecao demografica */
   function fatiaLente(r, id, filho) {
     const lv = filho != null ? liveFilho(id, filho) : liveDaUnidade();
@@ -408,38 +423,50 @@
     const nv = nivel(), el = $("#lista");
     let linhas = [], cab = "";
     const col = (r, id, f) => { const mv = valorMetrica(r, id, f); return mv && mv.v != null ? (mv.tipo === "venc" ? mv.quem.split(" ")[0] + " " + pct(mv.v, 0) : mv.tipo === "alvo" || mv.tipo === "seq" ? pct(mv.v) : sinal(mv.v)) : "–"; };
+    const v22col = (r) => { const t = votos22(r); return t == null ? "–" : fmt.format(t); };
     const nomeMet = (metricas().find((m) => m[0] === S.metrica) || ["", "métrica"])[1];
     if (nv === "br") {
       cab = "Estado";
-      linhas = Object.entries(BR.ufs).map(([uf, r]) => ({ id: uf, nome: NOME_UF[uf] || uf, apt: r.aptos26, v: col(r, uf, "uf"), cor: cor(valorMetrica(r, uf, "uf")), ir: () => vai({ uf, mun: null, zona: null, local: null, secao: null }) }));
+      linhas = Object.entries(BR.ufs).map(([uf, r]) => ({ id: uf, nome: NOME_UF[uf] || uf, apt: r.aptos26, v22: v22col(r), v: col(r, uf, "uf"), cor: cor(valorMetrica(r, uf, "uf")), ir: () => vai({ uf, mun: null, zona: null, local: null, secao: null }) }));
     } else if (nv === "uf") {
       cab = "Município";
-      linhas = Object.entries(UFD.mun).map(([cd, r]) => ({ id: cd, nome: r.nome, apt: r.aptos26, v: col(r, cd, "mun"), cor: cor(valorMetrica(r, cd, "mun")), ir: () => vai({ mun: cd, zona: null, local: null, secao: null }) }));
+      linhas = Object.entries(UFD.mun).map(([cd, r]) => ({ id: cd, nome: r.nome, apt: r.aptos26, v22: v22col(r), v: col(r, cd, "mun"), cor: cor(valorMetrica(r, cd, "mun")), ir: () => vai({ mun: cd, zona: null, local: null, secao: null }) }));
     } else if (nv === "mun" && MUND) {
       cab = "Zona";
-      linhas = Object.entries(MUND.zonas).map(([z, r]) => ({ id: z, nome: `Zona ${z} · ${r.ns} urnas`, apt: r.aptos26, v: col(r, null, "zona"), cor: cor(valorMetrica(r, null, "zona")), ir: () => vai({ zona: z, local: null, secao: null }) }));
+      linhas = Object.entries(MUND.zonas).map(([z, r]) => ({ id: z, nome: `Zona ${z} · ${r.ns} urnas`, apt: r.aptos26, v22: v22col(r), v: col(r, null, "zona"), cor: cor(valorMetrica(r, null, "zona")), ir: () => vai({ zona: z, local: null, secao: null }) }));
     } else if (nv === "zona" && MUND) {
       cab = "Local de votação";
-      linhas = MUND.locais.filter((l) => String(l.z) === String(S.zona)).map((l) => ({ id: l.l, nome: (l.nome || "Local " + l.l) + (l.so22 ? " (só 2022)" : ""), apt: l.aptos26, v: col(l, null, "local"), cor: cor(valorMetrica(l, null, "local")), ir: () => vai({ local: String(l.l), secao: null }) }));
+      linhas = MUND.locais.filter((l) => String(l.z) === String(S.zona)).map((l) => ({ id: l.l, nome: (l.nome || "Local " + l.l) + (l.so22 ? " (só 2022)" : ""), apt: l.aptos26, v22: v22col(l), v: col(l, null, "local"), cor: cor(valorMetrica(l, null, "local")), ir: () => vai({ local: String(l.l), secao: null }) }));
     } else if ((nv === "local" || nv === "secao") && SECD) {
       cab = "Seção";
       const i = SECD.cols.indexOf("nr_local");
       linhas = SECD.rows.filter((r) => String(r[i]) === String(S.local)).map((r) => {
         const o = {}; SECD.cols.forEach((k, j) => { o[k] = r[j]; });
-        return { id: r[0], nome: `Seção ${r[0]}` + (o.n_agreg > 1 ? ` (+${o.n_agreg - 1} agregada)` : ""), apt: o.aptos26, v: col(o, null, "secao"), cor: cor(valorMetrica(o, null, "secao")), ir: () => vai({ secao: String(r[0]) }) };
+        return { id: r[0], nome: `Seção ${r[0]}` + (o.n_agreg > 1 ? ` (+${o.n_agreg - 1} agregada)` : ""), apt: o.aptos26, v22: v22col(o), v: col(o, null, "secao"), cor: cor(valorMetrica(o, null, "secao")), ir: () => vai({ secao: String(r[0]) }) };
       });
     }
     linhas.sort((a, b) => (b.apt || 0) - (a.apt || 0));
-    el.innerHTML = linhas.length ? `<table><thead><tr><th>${cab} <span style="font-weight:400;color:var(--muda)">· toque para abrir</span></th><th class="num">aptos 2026</th><th class="num" title="${nomeMet}">${S.metrica === "dalvo" ? "× alvo" : "mapa"}</th><th></th></tr></thead><tbody>${
-      linhas.map((l, k) => `<tr class="clica" data-k="${k}"><td><span class="barrinha" style="width:8px;background:${l.cor}"></span> ${l.nome}</td><td class="num">${fmt.format(l.apt || 0)}</td><td class="num">${l.v}</td><td class="seta">›</td></tr>`).join("")}</tbody></table>` : "";
+    el.innerHTML = linhas.length ? `<table><thead><tr><th>${cab} <span style="font-weight:400;color:var(--muda)">· toque para abrir</span></th><th class="num">votos 2022</th><th class="num">aptos 2026</th><th class="num" title="${nomeMet}">${S.metrica === "dalvo" ? "× alvo" : "mapa"}</th><th></th></tr></thead><tbody>${
+      linhas.map((l, k) => `<tr class="clica" data-k="${k}"><td><span class="barrinha" style="width:8px;background:${l.cor}"></span> ${l.nome}</td><td class="num">${l.v22 || "–"}</td><td class="num">${fmt.format(l.apt || 0)}</td><td class="num">${l.v}</td><td class="seta">›</td></tr>`).join("")}</tbody></table>` : "";
     el.querySelectorAll("tr.clica").forEach((tr) => tr.addEventListener("click", () => linhas[+tr.dataset.k].ir()));
   }
 
   // ------------------------------------------------------------ paineis
+  function selo26(cats) {
+    if (!cats || !cats.some((c) => c.ap != null)) return "";
+    const tot = cats.reduce((a, c) => a + (c.n || 0), 0);
+    const ap = cats.reduce((a, c) => a + Math.min(c.ap == null ? c.n : c.ap, c.n || 0), 0);
+    if (ap <= 0) return ' <span class="selo selo-proj">projeção</span>';
+    if (ap >= 0.999 * tot) return ' <span class="selo selo-apur">apurado</span>';
+    return ' <span class="selo selo-parcial">parcial — sólido = apurado</span>';
+  }
+
   function painel(el, titulo, nota, cats, esc) {
     if (!cats) { el.innerHTML = `<h3>${titulo}</h3><div class="vazio">${nota}</div>`; return; }
+    titulo += selo26(cats);
     const tot = cats.reduce((a, c) => a + (c.n || 0), 0);
-    el.innerHTML = `<h3>${titulo}</h3><p class="nota">${nota} · ${fmt.format(tot)} eleitores · 1 ponto = ${esc.porPonto === 1 ? "1 eleitor" : fmt.format(esc.porPonto) + " eleitores"}</p><canvas></canvas>
+    const vot = tot - cats.filter((c) => c.nome === "Abstenção").reduce((a, c) => a + c.n, 0);
+    el.innerHTML = `<h3>${titulo}</h3><p class="nota">${nota} · ${fmt.format(Math.round(vot))} votos de ${fmt.format(Math.round(tot))} eleitores · 1 ponto = ${esc.porPonto === 1 ? "1 eleitor" : fmt.format(esc.porPonto) + " eleitores"}</p><canvas></canvas>
       <div class="leg">${cats.filter((c) => c.n > 0).map((c) => `<span><i style="background:${c.cor}"></i>${c.nome}</span>`).join("")}</div>`;
     const cv = el.querySelector("canvas");
     const hit = Bolhas.desenha(cv, cats, esc);
@@ -463,13 +490,18 @@
     const nomes = [];
     for (const c of [...(c22 || []), ...(c26 || [])]) if (!nomes.some((x) => x.k === chave(c))) nomes.push({ k: chave(c), c });
     const acha = (lista, k) => lista && lista.find((x) => chave(x) === k);
+    const temAp = (c26 || []).some((c) => c.ap != null && c.ap > 0 && c.ap < 0.999 * c.n);
+    const proj26q = (c26 || []).some((c) => c.ap != null && c.ap < 0.999 * (c.n || 0));
     const linhas = nomes.map(({ k, c }) => {
       const a = acha(c22, k), b = acha(c26, k);
       const base22 = c.valido ? v22 : t22, base26 = c.valido ? v26 : t26;
       const p22 = a && base22 ? 100 * a.n / base22 : null, p26 = b && base26 ? 100 * b.n / base26 : null;
       const dlt = p22 != null && p26 != null ? p26 - p22 : null;
+      const bProj = b && b.ap != null && b.ap < 0.999 * (b.n || 0);
+      const cel26 = !b ? "–" : (bProj ? `<span class="projetado" title="projeção — ainda não apurado por completo">≈ ${fmt.format(Math.round(b.n))}</span>` : fmt.format(Math.round(b.n)));
+      const celAp = temAp ? `<td>${b && b.ap != null ? fmt.format(Math.round(b.ap)) : "–"}</td>` : "";
       return `<tr><td><i style="background:${c.cor}"></i>${c.nome}${c.nr && c.nome !== "Outros" ? ` <span style="color:var(--muda)">${c.nr}</span>` : ""}</td>
-        <td>${a ? fmt.format(a.n) : "–"}</td><td>${pct(p22)}</td><td>${b ? fmt.format(Math.round(b.n)) : "–"}</td><td>${pct(p26)}</td>
+        <td>${a ? fmt.format(a.n) : "–"}</td><td>${pct(p22)}</td><td>${cel26}</td><td class="${bProj ? "projetado" : ""}">${pct(p26)}</td>${celAp}
         <td class="${dlt > 0 ? "delta-pos" : dlt < 0 ? "delta-neg" : ""}">${dlt == null ? "–" : sinal(dlt)}</td></tr>`;
     });
     let extras = [];
@@ -477,12 +509,13 @@
       const lista26 = S.cargo === "pr" ? (META.pr["2026"] && META.pr["2026"].t1) || []
         : (UFD && UFD.cands[S.cargo] && UFD.cands[S.cargo]["2026"]) || [];
       const ja = new Set((c26 || []).filter((c) => c.nr).map((c) => c.nr));
+      const nc = temAp ? 7 : 6;
       extras = lista26.filter((c) => !ja.has(c[0])).map((c) =>
-        `<tr><td><i style="background:${corPartido(c[0], "2026")}"></i>${c[1]} <span style="color:var(--muda)">${c[0]} · ${c[2]}</span></td><td>–</td><td>–</td><td>0</td><td>–</td><td>–</td></tr>`);
-      if (extras.length) extras.unshift(`<tr><td colspan="6" style="color:var(--muda);font-size:12px;padding-top:10px">Na urna em 2026 — os votos aparecem aqui com a apuração</td></tr>`);
+        `<tr><td><i style="background:${corPartido(c[0], "2026")}"></i>${c[1]} <span style="color:var(--muda)">${c[0]} · ${c[2]}</span></td><td>–</td><td>–</td><td>0</td><td>–</td>${temAp ? "<td>–</td>" : ""}<td>–</td></tr>`);
+      if (extras.length) extras.unshift(`<tr><td colspan="${nc}" style="color:var(--muda);font-size:12px;padding-top:10px">Na urna em 2026 — os votos aparecem aqui com a apuração</td></tr>`);
     }
-    el.innerHTML = `<table><thead><tr><th>categoria</th><th>2022</th><th>%</th><th>2026</th><th>%</th><th>Δ pts</th></tr></thead><tbody>${linhas.join("")}${extras.join("")}</tbody></table>
-      <p class="nota" style="font-size:12px;color:var(--muda);margin:6px 0 2px">Candidatos: % dos válidos. Brancos, nulos e abstenção: % dos aptos. Cores do mesmo partido em anos diferentes não são o mesmo candidato.</p>`;
+    el.innerHTML = `<table><thead><tr><th>categoria</th><th>2022</th><th>%</th><th>2026</th><th>%</th>${temAp ? "<th>apurado</th>" : ""}<th>Δ pts</th></tr></thead><tbody>${linhas.join("")}${extras.join("")}</tbody></table>
+      <p class="nota" style="font-size:12px;color:var(--muda);margin:6px 0 2px">Candidatos: % dos válidos. Brancos, nulos e abstenção: % dos aptos.${proj26q ? " <b>≈</b> e pontos esmaecidos = projeção; números sem ≈ são votos apurados." : ""} Cores do mesmo partido em anos diferentes não são o mesmo candidato.</p>`;
   }
 
   function caixaAlvo(u) {
@@ -515,7 +548,7 @@
     const nv = nivel();
     const dlt = atual != null && alvoC != null ? atual - alvoC : null;
     let numeros = `
-      <div><div class="n" style="color:${corC}">${pct(atual)}</div><div class="r">${cand[1]} ${shLive != null ? `ao vivo · ${pct(lv.pct, 0)} apurado` : "pela demografia"} (% dos válidos)</div></div>
+      <div><div class="n" style="color:${corC}">≈ ${pct(atual)}</div><div class="r">${cand[1]} ${shLive != null ? `projeção ao vivo · ${pct(lv.pct, 0)} apurado` : "pela demografia"} (% dos válidos)</div></div>
       <div><div class="n">${pct(alvoC)}</div><div class="r">alvo de ${cand[1]} aqui (50%+1 no país)</div></div>
       <div><div class="n ${dlt >= 0 ? "delta-pos" : "delta-neg"}">${sinal(dlt)}</div><div class="r">${cand[1]} − alvo (pontos de válidos)</div></div>
       <div><div class="n">${pct(ancO)} <span style="font-size:14px;color:var(--muda)">alvo ${pct(alvoO)}</span></div><div class="r">${outro[1]}: projeção e alvo</div></div>`;
@@ -540,20 +573,37 @@
     if (!S.uf || S.uf === "ZZ") { box.innerHTML = "<p>Escolha um estado para ver os candidatos a deputado.</p>"; return null; }
     DEP = await Dados.json(`dep/${S.uf}.json`);
     const nv = nivel();
-    let registro = null;
+    let registro = null, linhas = null, nota = "", usouDepsec = false;
     if (nv !== "uf" && S.mun) {
       DEPM = await Dados.json(`dep/${S.uf}/${S.mun}.json`);
       const d = DEPM && DEPM[S.cargo];
       if (d) registro = nv === "mun" ? d.mun : (d.zonas[S.zona] || (Object.keys(d.zonas).length === 0 ? d.mun : null));
     }
+    if (nv === "local" || nv === "secao") {
+      const ds = await Dados.json(`depsec/${S.mun}/${S.zona}_${S.cargo}.json`);
+      if (ds && ds.sec) {
+        usouDepsec = true;
+        let alvos;
+        if (nv === "secao") alvos = [String(S.secao)];
+        else {
+          const i = SECD ? SECD.cols.indexOf("nr_local") : -1;
+          alvos = SECD && i >= 0 ? SECD.rows.filter((r) => String(r[i]) === String(S.local)).map((r) => String(r[0])) : [];
+        }
+        const acc = {};
+        for (const sNum of alvos) for (const [nr, v] of (ds.sec[sNum] || [])) acc[nr] = (acc[nr] || 0) + v;
+        linhas = Object.entries(acc).sort((a, b) => b[1] - a[1]);
+        if (nv === "local") nota = `<p class='nota'>Soma das ${alvos.length} urnas deste local.</p>`;
+      } else {
+        nota = "<p class='nota'>O detalhe por seção não está publicado no Pages (400 MB): disponível no modo local/túnel após <code>web.gera_estatico --depsec</code>. Abaixo, a zona.</p>";
+        if (registro) linhas = registro.cands;
+      }
+    } else if (nv === "uf") linhas = (DEP[S.cargo]["2022"] || []).map((c) => [c[0], c[3]]);
+    else if (registro) linhas = registro.cands;
+    linhas = linhas || [];
     const lista = DEP[S.cargo]["2022"];
     const nomes = Object.fromEntries(lista.map((c) => [c[0], c]));
-    let linhas;
-    if (nv === "uf") linhas = lista.map((c) => [c[0], c[3]]);
-    else if (registro) linhas = registro.cands;
-    else linhas = [];
-    const tot = linhas.reduce((a, c) => a + c[1], 0);
-    const nota = nv === "local" || nv === "secao" ? "<p class='nota'>Detalhe por candidato em local e seção só no modo servidor local; abaixo, a zona.</p>" : "";
+    const soCand = linhas.filter(([nr]) => !nr.startsWith("L"));
+    const tot = soCand.reduce((a, c) => a + c[1], 0);
     box.innerHTML = `<h3 style="margin:0 0 6px;font-size:15px">Candidatos a ${S.cargo === "df" ? "deputado federal" : "deputado estadual"} · 2022</h3>${nota}
       <input type="search" placeholder="buscar candidato ou partido" aria-label="buscar candidato">
       <div class="rolagem"><table><thead><tr><th>#</th><th>candidato</th><th>partido</th><th>votos</th><th>% nominais</th></tr></thead><tbody></tbody></table></div>
@@ -561,20 +611,32 @@
     const tb = box.querySelector("tbody");
     const pinta = (q) => {
       q = (q || "").toLowerCase();
-      tb.innerHTML = linhas.filter(([nr]) => !q || (nomes[nr] && (nomes[nr][1] + " " + nomes[nr][2] + " " + nr).toLowerCase().includes(q))).slice(0, 400)
+      tb.innerHTML = soCand.filter(([nr]) => !q || (nomes[nr] && (nomes[nr][1] + " " + nomes[nr][2] + " " + nr).toLowerCase().includes(q))).slice(0, 400)
         .map(([nr, v], k) => `<tr><td>${k + 1}</td><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${corPartido(nr, "2022")};margin-right:6px"></i>${nomes[nr] ? nomes[nr][1] : nr} <span style="color:var(--muda)">${nr}</span></td><td>${nomes[nr] ? nomes[nr][2] : ""}</td><td>${fmt.format(v)}</td><td>${pct(100 * v / tot)}</td></tr>`).join("");
     };
     pinta("");
     box.querySelector("input").addEventListener("input", (e) => pinta(e.target.value));
     // vetor por partido para as bolhas: nominais + legenda + brancos/nulos + abstencao
-    if (!registro && nv !== "uf") return null;
+    if (!linhas.length) return null;
     const porP = {};
-    for (const [nr, v] of linhas) porP[nr.slice(0, 2)] = (porP[nr.slice(0, 2)] || 0) + v;
-    if (registro) for (const [p, v] of Object.entries(registro.leg)) porP[p] = (porP[p] || 0) + v;
+    for (const [nr, v] of linhas) {
+      const pp = nr.startsWith("L") ? nr.slice(1) : nr.slice(0, 2);
+      porP[pp] = (porP[pp] || 0) + v;
+    }
+    if (registro && !usouDepsec) for (const [pp, v] of Object.entries(registro.leg)) porP[pp] = (porP[pp] || 0) + v;
     const partidos = Object.entries(porP).sort((a, b) => b[1] - a[1]);
-    const pseudo = partidos.map(([p]) => [p, (META.partidos["2022"][p] || {}).sigla || p, (META.partidos["2022"][p] || {}).sigla || p]);
-    const abst = registro ? registro.abst : (u && u.pr22t1 ? u.pr22t1[u.pr22t1.length - 1] : 0);
-    const vet = partidos.map((x) => x[1]).concat([registro ? registro.bn : 0, 0, abst]);
+    const pseudo = partidos.map(([pp]) => [pp, (META.partidos["2022"][pp] || {}).sigla || pp, (META.partidos["2022"][pp] || {}).sigla || pp]);
+    let abst = registro ? registro.abst : (u && u.pr22t1 ? u.pr22t1[u.pr22t1.length - 1] : 0);
+    let bn = registro ? registro.bn : 0;
+    if (usouDepsec) {
+      // na urna, o comparecimento e o mesmo em todo cargo: brancos+nulos de deputado
+      // = comparecimento (do presidente) - validos de deputado desta unidade
+      const comp = votos22(u);
+      const val = linhas.reduce((a, c) => a + c[1], 0);
+      bn = comp != null ? Math.max(comp - val, 0) : 0;
+      abst = u && u.pr22t1 ? u.pr22t1[u.pr22t1.length - 1] : 0;
+    }
+    const vet = partidos.map((x) => x[1]).concat([bn, 0, abst]);
     return { vet, cands: pseudo };
   }
 
@@ -641,6 +703,8 @@
     $("#titulo-unidade").textContent = nome;
     const sub = [];
     if (u && u.aptos26) sub.push(`${fmt.format(u.aptos26)} aptos em 2026`);
+    const v22u = votos22(u);
+    if (v22u != null) sub.push(`${fmt.format(v22u)} votos em 2022 (1º turno)`);
     if (u && u.ns) sub.push(`${fmt.format(u.ns)} urnas`);
     if (nv === "secao" && u) sub.push(`âncora: ${u.nivel_ancora === "secao" ? "a própria seção em 2022" : "média do " + u.nivel_ancora}`);
     if (nv === "local" && u && u.so22) sub.push("local que existia em 2022 e não recebe urnas em 2026");

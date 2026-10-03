@@ -15,6 +15,8 @@ Estado da noite em `D:\Claude\eleicoes-dados\live\` (config, feed bruto, boletin
    py -m sintetico.alvo_2026          # alvo 1º turno (e --turno 2)
    py -m web.gera_estatico            # docs/dados/{meta,br,uf,mun,sec,dep}  ~5 min
    py -m web.geo                      # malhas (só se sumirem)
+   py -m web.gera_estatico --depsec   # deputado candidato x SEÇÃO (666 MB, fora do git;
+                                      #  só modo local/túnel — o Pages fica na zona)
    ```
 2. **Ensaio completo sem rede** (replay de 2022 em velocidade 20×, ~20 min):
    ```sh
