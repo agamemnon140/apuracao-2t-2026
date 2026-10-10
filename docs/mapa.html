@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mapa da apuração</title>
-<meta name="description" content="Como cada estado, município, zona, local e seção votou em 2022, e o que a demografia projeta para 2026 — com a apuração ao vivo por cima.">
-<link rel="stylesheet" href="css/mapa.css?v=2026-10-03c">
+<meta name="description" content="Como cada estado, município, zona, local e seção votou em 2022 e em 2026, para todos os cargos — com a projeção demográfica e o alvo de 50%+1 como referência.">
+<link rel="stylesheet" href="css/mapa.css?v=2026-10-10a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 </head>
@@ -41,6 +41,7 @@
   <section class="paineis" aria-label="Comparação 2022 e 2026">
     <h2 id="titulo-unidade" class="titulo-unidade"></h2>
     <p id="sub-unidade" class="sub-unidade"></p>
+    <p id="perfil-unidade" class="perfil-unidade" hidden></p>
     <div id="alvo" class="alvo"></div>
     <div class="dupla">
       <article class="painel" id="p22"></article>
@@ -52,12 +53,13 @@
 </main>
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <footer class="wrap rodape">
-  2022: resultado oficial por seção (dados abertos do TSE). 2026: projeção demográfica da seção
-  (2º turno de 2022 andado pela demografia de 2026) e alvo de 50%+1 dos válidos com ganho relativo
-  igual no país. Ao vivo: feed do TSE e boletins de urna. <a href="https://github.com/agamemnon140/apuracao-2026">código</a> · versão 2026-10-03c
+  2022 e 2026: resultado oficial por seção (dados abertos do TSE; 2026 publicado em 06/10, todos os
+  cargos, deputados por seção no modo local). Projeção demográfica da seção (2º turno de 2022 andado
+  pela demografia de 2026) e alvo de 50%+1 dos válidos com ganho relativo igual no país seguem como
+  referência. <a href="https://github.com/agamemnon140/apuracao-2026">código</a> · versão 2026-10-10a
 </footer>
-<script src="js/bolhas.js?v=2026-10-03c"></script>
-<script src="js/dados.js?v=2026-10-03c"></script>
-<script src="js/mapa.js?v=2026-10-03c"></script>
+<script src="js/bolhas.js?v=2026-10-10a"></script>
+<script src="js/dados.js?v=2026-10-10a"></script>
+<script src="js/mapa.js?v=2026-10-10a"></script>
 </body>
 </html>

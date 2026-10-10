@@ -118,6 +118,9 @@ a { color: var(--realce); }
 .paineis { min-width: 0; }
 .titulo-unidade { font-size: 22px; margin: 4px 0 0; letter-spacing: -0.01em; }
 .sub-unidade { margin: 2px 0 10px; color: var(--tinta-2); font-size: 14px; }
+.perfil-unidade { margin: -4px 0 10px; color: var(--tinta-2); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.perfil-unidade .pf-g { white-space: nowrap; }
+.perfil-unidade .pf-g b { font-weight: 600; color: var(--tinta); }
 .alvo { background: var(--sup); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
 .alvo:empty { display: none; }
 .alvo h3 { margin: 0 0 6px; font-size: 14px; color: var(--tinta-2); font-weight: 600; }
@@ -176,3 +179,5 @@ a { color: var(--realce); }
 body.carregando #mapa, body.carregando .paineis { opacity: 0.45; transition: opacity .15s; }
 body.carregando .migalhas::after { content: "carregando…"; color: var(--muda); align-self: center; margin-left: 6px; }
 .rodape { color: var(--muda); font-size: 12px; padding-bottom: 28px; }
+.deputados .abas-ano { margin-left: 8px; vertical-align: middle; }
+.deputados .abas-ano button { min-height: 28px; padding: 3px 10px; font-size: 13px; }

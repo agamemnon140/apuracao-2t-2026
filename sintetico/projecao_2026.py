@@ -87,11 +87,13 @@ def religiao_2010() -> pd.DataFrame:
                          "sr10": (largo["2836"] / den).values})
 
 
-def main() -> int:
-    with open(SAIDA / "modelo_2022.json", encoding="utf-8") as fh:
-        M = json.load(fh)
-    base = pd.read_parquet(SAIDA / "base_2022.parquet")
+PERFIL = ["pct_fem", "pct_1624", "pct_2539", "pct_60m", "pct_fund", "pct_sup"]
 
+
+def deriva_2026(base: pd.DataFrame, rel10: pd.DataFrame | None = None):
+    """Base de 2022 andada ate 2026: perfil pelo delta municipal do eleitorado,
+    religiao pela tendencia censitaria extrapolada. Devolve (proj, delta, dr_ev, dr_sr).
+    `rel10` (cd_mun, ev10, sr10) evita a chamada ao SIDRA quando ja esta em disco."""
     atual = perfil_municipal_atual()
     p22 = base.groupby("cd_municipio_tse").apply(
         lambda g: pd.Series({c: np.average(g[c].fillna(g[c].mean()), weights=g["eleitores"])
@@ -102,14 +104,15 @@ def main() -> int:
           f"(ex.: 60+ media {100 * delta['pct_60m'].mean():+.2f}pp, "
           f"superior {100 * delta['pct_sup'].mean():+.2f}pp)")
 
-    rel10 = religiao_2010()
+    if rel10 is None:
+        rel10 = religiao_2010()
     liga = pd.read_parquet(SAIDA / "municipio_atributos_2022.parquet",
                            columns=["cd_mun", "cd_municipio_tse"]).dropna()
     liga["cd_municipio_tse"] = liga["cd_municipio_tse"].astype(int)
     rel = rel10.merge(liga, on="cd_mun", how="inner").set_index("cd_municipio_tse")
 
     proj = base.copy()
-    for c in ["pct_fem", "pct_1624", "pct_2539", "pct_60m", "pct_fund", "pct_sup"]:
+    for c in PERFIL:
         proj[c] = (proj[c] + proj["cd_municipio_tse"].map(delta[c]).fillna(0)).clip(0, 1)
     dr_ev = (proj["pct_evangelica"] - proj["cd_municipio_tse"].map(rel["ev10"])) * ANOS_EXTRAP
     dr_sr = (proj["pct_sem_religiao"] - proj["cd_municipio_tse"].map(rel["sr10"])) * ANOS_EXTRAP
@@ -117,6 +120,14 @@ def main() -> int:
     proj["pct_sem_religiao"] = (proj["pct_sem_religiao"] + dr_sr.fillna(0)).clip(0, 1)
     print(f"deriva religiao: evangelicos {100 * dr_ev.mean():+.2f}pp, "
           f"sem religiao {100 * dr_sr.mean():+.2f}pp (medias simples)")
+    return proj, delta, dr_ev, dr_sr
+
+
+def main() -> int:
+    with open(SAIDA / "modelo_2022.json", encoding="utf-8") as fh:
+        M = json.load(fh)
+    base = pd.read_parquet(SAIDA / "base_2022.parquet")
+    proj, delta, dr_ev, dr_sr = deriva_2026(base)
 
     coef = np.array(M["coef"]); inter = np.array(M["intercept"])
     mu = np.array(M["mu"]); sd = np.array(M["sd"])

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificação demográfica 2026</title>
+<meta name="description" content="O 1º turno de 2026 contra o de 2022, seção a seção: quanto da mudança de voto a demografia previu, onde acertou a direção e onde o voto andou além dela.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/*__CSS_BASE__*/
+:root{--prev:#1baf7a; --real:#4a3aa7}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--prev:#199e70; --real:#9085e9}}
+:root[data-theme="dark"]{--prev:#199e70; --real:#9085e9}
+main{padding-left:16px;padding-right:16px}
+.db{margin:4px 0 0}
+.db-eixo,.db-linha{display:grid;grid-template-columns:minmax(84px,170px) 1fr minmax(118px,auto);gap:10px;align-items:center}
+.db-linha{min-height:30px;border-radius:4px;cursor:default}
+.db-linha:hover{background:var(--accent-soft)}
+.db-rot{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.db-num{font-size:13px;color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.db-trilho{position:relative;height:22px}
+.db-grade{position:absolute;top:0;bottom:0;width:1px;background:var(--grid)}
+.db-grade.zero{background:var(--baseline)}
+.db-liga{position:absolute;top:10px;height:2px;background:var(--baseline);border-radius:1px}
+.db-pt{position:absolute;top:11px;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;box-sizing:border-box}
+.db-pt.prev{border:2.5px solid var(--prev);background:var(--surface);box-shadow:0 0 0 2px var(--surface)}
+.db-pt.real{background:var(--real);box-shadow:0 0 0 2px var(--surface)}
+.db-eixo .db-trilho{height:18px}
+.db-tick{position:absolute;top:0;transform:translateX(-50%);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.leg-db{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:2px 0 8px}
+.leg-db i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;box-sizing:border-box}
+.leg-db i.prev{border:2.5px solid var(--prev)}
+.leg-db i.real{background:var(--real)}
+.grade2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:0 22px}
+.tab-wrap{overflow-x:auto}
+td.pos{color:var(--lula)} td.neg{color:var(--bolso)}
+.sub{color:var(--muted);font-size:12.5px;font-weight:400}
+@media (max-width:520px){.db-eixo,.db-linha{grid-template-columns:78px 1fr 104px;gap:6px}.db-rot{font-size:13px}.db-num{font-size:12px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">Apuração 2026 · verificação pós-eleição · <span data-v="nivel.turno" data-f="int"></span>º turno</div>
+  <h1>A demografia apontou a direção certa. O voto andou o dobro.</h1>
+  <p class="stand">O 1º turno de 2026 contra o de 2022, seção a seção. A mudança do eleitorado (menos jovens, menos
+    gente com só o fundamental, mais evangélicos) explica metade da queda de Lula nos votos dados aos dois primeiros
+    e acerta a direção nas duas escalas testadas. A outra metade é vento político, concentrado no Sul, no Centro-Oeste e
+    no interior.</p>
+  <div class="tiles">
+    <div class="tile"><div class="v num"><span data-v="nivel.real_2022" data-f="pct2"></span> → <span data-v="nivel.real_2026" data-f="pct2"></span></div>
+      <div class="l">Lula nos votos dados a ele e à direita, 1º turno de 2022 → 2026 (<span data-v="nivel.mudanca_real_pp" data-f="pts"></span>)</div></div>
+    <div class="tile"><div class="v num" data-v="nivel.efeito_demografia_pp" data-f="pts"></div>
+      <div class="l">previsto pela demografia: coeficientes de 2022 sobre o eleitorado de 2026</div></div>
+    <div class="tile"><div class="v num" data-v="nivel.resto_pp" data-f="pts"></div>
+      <div class="l">o resto: um vento uniforme de <span data-v="nivel.vento_logodds_direita" data-f="lo"></span> em log-odds para a direita</div></div>
+    <div class="tile"><div class="v num" data-v="composicao_secoes.fe_municipio.coef.deriva_perfil" data-f="b"></div>
+      <div class="l">dentro de cada município: a seção que mais mudou de perfil andou esta fração do previsto</div></div>
+    <div class="tile"><div class="v num" data-v="composicao_municipios.total_fe_uf.coef.deriva" data-f="b"></div>
+      <div class="l">entre municípios do mesmo estado: andou esta fração do previsto (1 = exatamente o previsto)</div></div>
+  </div>
+</header>
+
+<section>
+  <h2>1. A conta do nível</h2>
+  <p>A comparação é de 1º turno com 1º turno, porque os dois têm terceiros. Em 2022 Lula teve <b data-v="nivel.real_2022" data-f="pct2"></b> dos votos
+    dados a ele e a Bolsonaro. Aplicando a cada seção a deriva demográfica que o sintético previa (o mesmo cálculo que andou a âncora),
+    esse 1º turno viraria <b data-v="nivel.andado_demografia" data-f="pct2"></b> em 2026. O real foi <b data-v="nivel.real_2026" data-f="pct2"></b>
+    (<span data-v="nivel.validos_2026.esq" data-f="pct2"></span> × <span data-v="nivel.validos_2026.dir" data-f="pct2"></span> dos válidos, com
+    <span data-v="nivel.validos_2026.outros" data-f="pct2"></span> para os demais).</p>
+  <p>A demografia responde por <b data-v="nivel.efeito_demografia_pp" data-f="pts"></b> dos <b data-v="nivel.mudanca_real_pp" data-f="pts"></b>.
+    O que sobra equivale a deslocar todas as seções <b data-v="nivel.vento_logodds_direita" data-f="lo"></b> em log-odds para a direita. Na régua
+    histórica do comparativo, os ventos foram +0,11 (2010→2014) e +0,14 (2014→2018) com a esquerda no governo, e −0,36 (2018→2022) com a direita.
+    2026 cabe no padrão de quem está no governo pagar um pouco, e é o menor dos três. É o cenário de incumbência "+0,10" da tabela da projeção.</p>
+  <div class="callout">
+    <p><b>Por que a projeção pareceu cravar o resultado.</b> O sintético previa <span data-v="nivel.sintetico_t2.proj_2026" data-f="pct2"></span> para Lula a dois,
+      e o 1º turno deu <span data-v="nivel.real_2026" data-f="pct2"></span>. A coincidência é de bases: a projeção parte do 2º turno de 2022
+      (<span data-v="nivel.real_2022_t2" data-f="pct2"></span>), que já tinha dois pontos a menos de Lula que o 1º turno (<span data-v="nivel.real_2022" data-f="pct2"></span>).
+      Medida contra o 1º turno, a demografia explica só metade da queda. O teste justo da âncora é o 2º turno de 25/10.</p>
+  </div>
+  <p class="note">Comparecimento: <span data-v="nivel.comparecimento.2022" data-f="pct2"></span> em 2022 e <span data-v="nivel.comparecimento.2026" data-f="pct2"></span> em 2026 (1º turno).</p>
+</section>
+
+<section>
+  <h2>2. Direção: confirmada nas duas escalas</h2>
+  <p>Se a composição do eleitorado move o voto, os lugares onde a demografia mais mudou devem ter andado mais, na direção prevista. O teste é a
+    regressão do deslocamento real (log-odds de Lula contra a direita, 2026 menos 2022) sobre o deslocamento previsto. Um coeficiente de 1 quer dizer que andou
+    exatamente o previsto, e 0 quer dizer que a demografia não apareceu.</p>
+  <div class="fig tab-wrap"><table id="t-comp"></table>
+    <div class="cap">Erro-padrão robusto por cluster: UF nos municípios (27 grupos), município nas seções. Seções estáveis: mesma numeração nos dois anos e eleitorado
+      dentro de ±15%.</div></div>
+  <p><b>Dentro do município</b>, onde o perfil vem do cadastro do TSE de cada seção nos dois anos, a seção que envelheceu ou se escolarizou mais andou
+    <b data-v="composicao_secoes.fe_municipio.coef.deriva_perfil" data-f="b"></b> do previsto. É o teste mais limpo, porque o vento estadual e o municipal ficam de fora.
+    Por eixo, a perda de jovens (16–24) moveu metade do esperado, e a escolarização um pouco mais que o esperado. Os idosos (60+), que o modelo já tratava como neutros,
+    puxaram levemente para Lula.</p>
+  <p><b>Entre municípios</b> o efeito sai maior que o previsto (<span data-v="composicao_municipios.total_fe_uf.coef.deriva" data-f="b"></span>), e quase todo pela
+    escolaridade (<span data-v="composicao_municipios.eixos_fe_uf.coef.escolaridade" data-f="b"></span>). Leia com cuidado: os municípios em que a fatia de eleitores
+    só com o fundamental mais caiu são os do interior, e o interior andou para a direita por outros motivos (seção 4). O coeficiente acima de 1 mistura as duas coisas.
+    Religião ficou abaixo do previsto (<span data-v="composicao_municipios.eixos_fe_uf.coef.religiao" data-f="b"></span>), e idade é inconclusiva nessa escala.</p>
+</section>
+
+<section>
+  <h2>3. Comportamento: coeficientes quase parados</h2>
+  <p>A segunda aposta do sintético era que cada grupo vota como votou em 2022. O mesmo logit multinomial ajustado no 1º turno de 2022 e no de 2026 (Lula,
+    direita, nenhum dos dois), na mesma unidade (+1 desvio-padrão de 2022), mostra contrastes muito estáveis. A hipótese passou. Com a demografia de 2026 e os
+    coeficientes de 2022, o modelo daria <b data-v="comportamento.decomposicao.coef22_demografia26" data-f="pct2"></b>, e o ajuste de 2026 reproduz
+    <b data-v="comportamento.decomposicao.t1_2026_modelo" data-f="pct2"></b>. O que mexeu:</p>
+  <div class="fig tab-wrap"><h3>Contraste Lula − direita por covariável <span class="sub">(log-odds por +1 dp; positivo = puxa para Lula)</span></h3><table id="t-coef"></table>
+    <div class="cap">2010–2022: 2º turno (comparativo.json). Colunas "1º t.": ajustadas aqui. Destaque: mudança de 0,015 ou mais entre os dois 1º turnos.</div></div>
+  <ul>
+    <li><b>Evangélicos:</b> a distância, que crescia desde 2010 (−0,04 → −0,19), recuou pela primeira vez em quatro ciclos. Nas seções dos municípios menos
+      evangélicos Lula perdeu <span data-q="pct_evangelica:1"></span>, e nos mais evangélicos, <span data-q="pct_evangelica:5"></span>. O avanço evangélico previsto
+      pesou menos do que a projeção supunha.</li>
+    <li><b>Escolaridade:</b> o ensino superior seguiu migrando para a esquerda, a tendência mais longa da série. No quintil mais escolarizado Lula perdeu só
+      <span data-q="pct_sup:5"></span>, e nos demais, de <span data-q="pct_sup:4"></span> a <span data-q="pct_sup:2"></span>.</li>
+    <li><b>Jovens:</b> a vantagem de Lula entre 16 e 24 anos encolheu. As seções mais jovens perderam <span data-q="pct_1624:5"></span>, e as menos jovens
+      <span data-q="pct_1624:1"></span>.</li>
+    <li><b>Porte:</b> o gradiente de tamanho do município dobrou. As metrópoles se mexeram pouco e as cidades pequenas, muito. A separação entre capital e interior
+      se aprofundou.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>4. Onde o voto andou além da demografia</h2>
+  <p>Cada linha compara o deslocamento previsto pela demografia (anel) com o real (ponto), em pontos de Lula nos votos dados aos dois, do 1º turno de 2022 para o
+    de 2026. Linhas longas são vento político, não demografia.</p>
+  <div class="leg-db"><span><i class="prev"></i>previsto pela demografia</span><span><i class="real"></i>real</span></div>
+  <div class="grade2">
+    <div class="fig"><h3>Região</h3><div id="g-regiao" class="db"></div></div>
+    <div class="fig"><h3>Porte do município <span class="sub">(hierarquia urbana, IBGE)</span></h3><div id="g-porte" class="db"></div></div>
+  </div>
+  <div class="fig"><h3>Estados <span class="sub">(ordenados pelo vento: real − previsto)</span></h3><div id="g-uf" class="db"></div></div>
+  <h3 style="margin-top:28px">Por quintil de cada eixo <span class="sub">(seções estáveis, quintis com o mesmo número de votos)</span></h3>
+  <div class="grade2" id="g-quintis"></div>
+</section>
+
+<section>
+  <h2>5. Limites e o que vem</h2>
+  <ul>
+    <li><b>1º contra 1º turno.</b> O 2º turno de 25/10 testa a âncora diretamente. Depois de baixar os arquivos do 2º turno:
+      <code>python -m pipeline.compila_secao 2026</code> e <code>python -m sintetico.verifica_2026 --turno 2</code>.</li>
+    <li><b>Religião não foi observada.</b> Não há censo novo. A "deriva" religiosa é a tendência municipal 2010–2022 extrapolada, então o teste só diz se os municípios
+      que se evangelizavam mais rápido andaram mais.</li>
+    <li><b>Perfil do cadastro.</b> Escolaridade e idade vêm do cadastro do TSE. Escolaridade é autodeclarada e envelhece no cadastro, então parte da "escolarização"
+      pode ser só atualização cadastral.</li>
+    <li><b>Pareamento por número de seção.</b> <span data-v="composicao_secoes.pareadas" data-f="int"></span> urnas de 2026 têm par com o mesmo número em 2022, e
+      <span data-v="composicao_secoes.estaveis" data-f="int"></span> são estáveis (<span data-v="composicao_secoes.aptos_estaveis_pct" data-f="pct1"></span> dos aptos).</li>
+    <li><b>Os coeficientes são associações</b> entre lugares, não comportamento individual (falácia ecológica). Os contrastes servem para comparar ciclos, não para
+      dizer como uma pessoa vota.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Gerado em <span data-v="gerado_em"></span> por <code>sintetico/verifica_2026.py</code> e <code>sintetico/relatorio_verificacao.py</code>.
+    Fontes: votação por seção e detalhe da votação por seção, 2022 e 2026 (dados abertos do TSE); perfil do eleitorado por seção (TSE); Censo 2010 e 2022 (IBGE).</p>
+</footer>
+</main>
+<div id="tip" role="tooltip"></div>
+<script>
+const D = /*__DADOS__*/null;
+const nf = (x, d) => Number(x).toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const sg = (x, d) => (x > 0 ? "+" : x < 0 ? "−" : "") + nf(Math.abs(x), d);
+const F = {
+  pct2: (x) => nf(x, 2) + "%", pct1: (x) => nf(x, 1) + "%", int: (x) => nf(x, 0),
+  pts: (x) => sg(x, 1) + (Math.abs(x) >= 1.95 ? " pts" : " pt"), lo: (x) => sg(x, 3), b: (x) => nf(x, 2),
+};
+const pega = (p) => p.split(".").reduce((o, k) => (o == null ? o : o[k]), D);
+document.querySelectorAll("[data-v]").forEach((el) => {
+  const v = pega(el.dataset.v);
+  if (v == null) { el.textContent = "–"; return; }
+  el.textContent = el.dataset.f ? F[el.dataset.f](v) : v;
+});
+document.querySelectorAll("[data-q]").forEach((el) => {
+  const [c, k] = el.dataset.q.split(":");
+  const l = D.quintis[c] && D.quintis[c].linhas[+k - 1];
+  el.textContent = l ? F.pts(l.real_pp) : "–";
+});
+
+// --- tabela da composicao
+(function () {
+  const M = D.composicao_municipios, S = D.composicao_secoes;
+  const lin = (rot, r, k, leitura, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${rot}</td><td class="num">${nf(r.coef[k], 2)}</td><td class="num">${nf(r.ep[k], 2)}</td><td style="text-align:left">${leitura}</td></tr>`;
+  const le = (b, ep) => (b - 2 * ep > 1 ? "acima do previsto" : b + 2 * ep < 1 && b - 2 * ep > 0 ? "na direção, abaixo do previsto" : b - 2 * ep > 0 ? "como previsto" : b + 2 * ep < 0 ? "contra o previsto" : "inconclusivo");
+  const e = S.esperado_por_pp, o = S.deltas_fe_municipio;
+  let h = `<thead><tr><th>teste</th><th>coef.</th><th>erro-p.</th><th style="text-align:left">leitura</th></tr></thead><tbody>`;
+  h += lin(`Dentro do município · deriva do perfil (${nf(S.estaveis, 0)} seções)`, S.fe_municipio, "deriva_perfil", le(S.fe_municipio.coef.deriva_perfil, S.fe_municipio.ep.deriva_perfil), "destaque");
+  h += lin(`Entre municípios · deriva total, efeito fixo de UF (${nf(M.n_municipios, 0)})`, M.total_fe_uf, "deriva", le(M.total_fe_uf.coef.deriva, M.total_fe_uf.ep.deriva), "destaque");
+  h += lin("Entre municípios · deriva total, sem efeito fixo", M.total_sem_fe, "deriva", le(M.total_sem_fe.coef.deriva, M.total_sem_fe.ep.deriva));
+  for (const k of Object.keys(M.eixos_fe_uf.coef)) h += lin(`&nbsp;&nbsp;só o eixo ${k}`, M.eixos_fe_uf, k, le(M.eixos_fe_uf.coef[k], M.eixos_fe_uf.ep[k]));
+  h += `<tr><td colspan="4" style="text-align:left;padding-top:14px;color:var(--muted);font-size:13px">Dentro do município, por ponto percentual de mudança no perfil da seção (log-odds; esperado pelos coeficientes de 2022):</td></tr>`;
+  for (const k of Object.keys(o.coef)) h += `<tr><td>&nbsp;&nbsp;${k}</td><td class="num">${nf(o.coef[k], 4)}</td><td class="num">${nf(o.ep[k], 4)}</td><td style="text-align:left">esperado ${nf(e[k], 4)}</td></tr>`;
+  document.getElementById("t-comp").innerHTML = h + "</tbody>";
+})();
+
+// --- tabela dos contrastes
+(function () {
+  const ROT = {pct_fem: "mulheres", pct_1624: "16–24 anos", pct_2539: "25–39 anos", pct_60m: "60+ anos", pct_fund: "só fundamental", pct_sup: "superior",
+    log_renda: "renda (log)", pct_branca: "brancos", pct_preta: "pretos", pct_rural: "rural", log_pop_mun: "população do município (log)",
+    hierarquia_num: "hierarquia urbana", em_rm: "região metropolitana", reg_N: "Norte", reg_NE: "Nordeste", reg_CO: "Centro-Oeste", reg_S: "Sul",
+    pct_evangelica: "evangélicos", pct_sem_religiao: "sem religião", vab_agro: "VAB agro", vab_industria: "VAB indústria", vab_adm: "VAB adm. pública",
+    pct_ocup_agro: "ocupados no agro", pct_ocup_bens: "ocupados em bens", pct_ocup_comercio: "ocupados no comércio"};
+  const anos = ["2010", "2014", "2018", "2022"];
+  let h = `<thead><tr><th>covariável</th>${anos.map((a) => `<th>${a}<br><span class="sub">2º t.</span></th>`).join("")}<th>2022<br><span class="sub">1º t.</span></th><th>2026<br><span class="sub">1º t.</span></th><th>mudança</th></tr></thead><tbody>`;
+  for (const c of D.comportamento.contrastes) {
+    const forte = Math.abs(c.mudanca) >= 0.015;
+    h += `<tr${forte ? ' class="destaque"' : ""}><td>${ROT[c.col] || c.col}</td>${anos.map((a) => `<td class="num">${sg(c.t2_hist[a], 3)}</td>`).join("")}<td class="num">${sg(c.t1_2022, 3)}</td><td class="num">${sg(c.t1_2026, 3)}</td><td class="num ${c.mudanca > 0 ? "pos" : c.mudanca < 0 ? "neg" : ""}">${sg(c.mudanca, 3)}</td></tr>`;
+  }
+  document.getElementById("t-coef").innerHTML = h + "</tbody>";
+})();
+
+// --- graficos de halteres (previsto x real)
+const tip = document.getElementById("tip");
+function halteres(el, linhas) {
+  const vals = linhas.flatMap((l) => [l.prev, l.real]).concat([0]);
+  const lo = Math.floor(Math.min(...vals)), hi = Math.ceil(Math.max(...vals));
+  const x = (v) => (100 * (v - lo) / (hi - lo || 1)).toFixed(2) + "%";
+  const larg = el.clientWidth || 600;                 // trilho estreito (celular, coluna dupla): menos rotulos
+  const passo = Math.max(1, Math.ceil((hi - lo) / (larg < 520 ? 4 : 7))), ticks = [];
+  for (let t = Math.ceil(lo / passo) * passo; t <= hi; t += passo) ticks.push(t);
+  const grade = ticks.map((t) => `<div class="db-grade${t === 0 ? " zero" : ""}" style="left:${x(t)}"></div>`).join("");
+  let h = `<div class="db-eixo"><div></div><div class="db-trilho">${ticks.map((t) => `<span class="db-tick" style="left:${x(t)}">${sg(t, 0)}</span>`).join("")}</div><div class="db-num">previsto · real</div></div>`;
+  linhas.forEach((l, i) => {
+    const a = Math.min(l.prev, l.real), b = Math.max(l.prev, l.real);
+    h += `<div class="db-linha" data-i="${i}"><div class="db-rot" title="${l.rot}">${l.rot}</div><div class="db-trilho">${grade}
+      <div class="db-liga" style="left:${x(a)};width:calc(${x(b)} - ${x(a)})"></div>
+      <div class="db-pt prev" style="left:${x(l.prev)}"></div><div class="db-pt real" style="left:${x(l.real)}"></div></div>
+      <div class="db-num">${sg(l.prev, 1)} · <b style="color:var(--ink)">${sg(l.real, 1)}</b></div></div>`;
+  });
+  el.innerHTML = h;
+  el.querySelectorAll(".db-linha").forEach((r) => {
+    const l = linhas[+r.dataset.i];
+    r.addEventListener("mousemove", (ev) => {
+      tip.innerHTML = `<b>${l.rot}</b><br>Lula a dois: ${nf(l.q22, 1)}% → ${nf(l.q26, 1)}%<br>previsto ${F.pts(l.prev)} · real ${F.pts(l.real)}<br>além da demografia: ${F.pts(l.real - l.prev)}`;
+      tip.style.opacity = 1;
+      tip.style.left = Math.min(ev.clientX + 14, innerWidth - 270) + "px"; tip.style.top = ev.clientY + 14 + "px";
+    });
+    r.addEventListener("mouseleave", () => { tip.style.opacity = 0; });
+  });
+}
+const conv = (rows, k) => rows.map((r) => ({rot: r[k], prev: r.previsto_pp, real: r.real_pp, q22: r.q22, q26: r.q26}));
+const NREG = {N: "Norte", NE: "Nordeste", CO: "Centro-Oeste", SE: "Sudeste", S: "Sul"};
+halteres(document.getElementById("g-regiao"), conv(D.por_regiao, "regiao").map((r) => ({...r, rot: NREG[r.rot] || r.rot})).sort((a, b) => (a.real - a.prev) - (b.real - b.prev)));
+const ORDPORTE = ["metrópole", "capital regional", "centro sub-regional", "centro de zona", "centro local"];
+halteres(document.getElementById("g-porte"), conv(D.por_porte, "porte").sort((a, b) => ORDPORTE.indexOf(a.rot) - ORDPORTE.indexOf(b.rot)));
+halteres(document.getElementById("g-uf"), conv(D.por_uf, "uf").sort((a, b) => (a.real - a.prev) - (b.real - b.prev)));
+const gq = document.getElementById("g-quintis");
+for (const [c, q] of Object.entries(D.quintis)) {
+  const box = document.createElement("div");
+  box.className = "fig";
+  box.innerHTML = `<h3>${q.rotulo}</h3><div class="db"></div>`;
+  gq.appendChild(box);
+  const pc = (v) => (v <= 1 && !c.includes("renda") ? nf(100 * v, 0) + "%" : "R$ " + nf(v, 0));
+  halteres(box.querySelector(".db"), q.linhas.map((l) => ({rot: `Q${l.quintil} · ${pc(l.faixa[0])}–${pc(l.faixa[1])}`, prev: l.previsto_pp, real: l.real_pp, q22: l.q22, q26: l.q26})));
+}
+</script>
+</body>
+</html>

@@ -57,6 +57,12 @@
     const c = UFD.cands[cargo];
     return (c && c["2022"]["t" + turno]) || [];
   }
+  /* 2026 apurado (dados abertos): lista alinhada aos vetores {cargo}26t{turno} */
+  function listaCands26(cargo, turno) {
+    if (cargo === "pr") return (META.pr.r26 && META.pr.r26["t" + turno]) || [];
+    const c = UFD && UFD.cands[cargo];
+    return (c && c.r26 && c.r26["t" + turno]) || [];
+  }
   const EXTRAS = () => [
     { nome: "Brancos", cor: css("--branco-v"), extra: true },
     { nome: "Nulos", cor: css("--nulo-v"), extra: true },
@@ -192,6 +198,23 @@
     if (S.cargo === "df" || S.cargo === "de") return null;
     return `${S.cargo}22t${S.turno}`;
   }
+  function chave26() {
+    if (S.cargo === "df" || S.cargo === "de") return null;
+    return `${S.cargo}26t${S.turno}`;
+  }
+  /* ha resultado oficial de 2026 publicado para o cargo/turno corrente? (br.json traz o presidente) */
+  function tem26(turno = S.turno) {
+    return !!(BR && BR.br[`pr26t${turno}`]);
+  }
+  /* fatia (% dos validos) do campo da lente no resultado oficial de 2026, ou null */
+  function fatiaReal26(r, lente = S.lente) {
+    const v = r && r[`pr26t${S.turno}`], cands = listaCands26("pr", S.turno);
+    if (!v) return null;
+    const campo = lente === "esq" ? META.campos_2026.esq[0] : META.campos_2026.dir[0];
+    const val = v.slice(0, cands.length).reduce((a, b) => a + b, 0);
+    const i = idxCand(cands, campo);
+    return val && i >= 0 ? 100 * v[i] / val : null;
+  }
 
   /* ao vivo da unidade: {apur:[e,d,o,bn,abst?], proj:[e,d,o,bn,abst], pct, sh_esq...} ou null */
   function liveDaUnidade() {
@@ -228,15 +251,19 @@
   function idxCand(cands, nr) { return cands.findIndex((c) => c[0] === nr); }
   const nomeLente = () => (S.lente === "esq" ? META.campos_2026.esq[1] : META.campos_2026.dir[1]);
   /* votos totais de 2022 (1º turno): soma do vetor menos a abstenção (= comparecimento) */
-  function votos22(r) {
-    const v = r && r.pr22t1;
+  function votos22(r, chave = "pr22t1") {
+    const v = r && r[chave];
     if (!v) return null;
     let t = 0;
     for (let i = 0; i < v.length - 1; i++) t += v[i] || 0;
     return t;
   }
-  /* fatia do candidato da lente nos VALIDOS (%), ao vivo quando ha, senao projecao demografica */
+  const votos26 = (r) => votos22(r, "pr26t1");
+  /* fatia do candidato da lente nos VALIDOS (%): resultado oficial quando publicado, senao
+     ao vivo, senao projecao demografica */
   function fatiaLente(r, id, filho) {
+    const real = fatiaReal26(r);
+    if (real != null) return { v: real, live: false, real: true };
     const lv = filho != null ? liveFilho(id, filho) : liveDaUnidade();
     if (lv && lv.sh_esq != null && lv.sh_dir != null) return { v: S.lente === "esq" ? lv.sh_esq : lv.sh_dir, live: true };
     if (lv && S.lente === "esq" && lv.sh_esq != null) return { v: lv.sh_esq, live: true };
@@ -253,18 +280,29 @@
   }
   function metricas() {
     const m = [];
+    const r26 = tem26();
     if (S.cargo === "pr") {
-      const nm = nomeLente();
-      m.push(["dalvo", `${nm} − alvo de 50%+1 (pontos de válidos)`],
+      const nm = nomeLente(), c = META.campos_2026;
+      if (r26) m.push(["m26r", `2026 · ${S.turno}º turno · margem ${c.esq[1]} − ${c.dir[1]} (apurado)`],
+        ["sw26", `variação da margem 2022 → 2026 (${S.turno}º turno, pontos)`]);
+      m.push(["dalvo", `${nm} − alvo de 50%+1 (pontos de válidos${r26 ? ", apurado" : ""})`],
         ["alvo", `alvo de ${nm} (% dos válidos)`],
         ["m22t2", "2022 · 2º turno · margem Lula − Bolsonaro"],
         ["m22t1", "2022 · 1º turno · margem Lula − Bolsonaro"],
         ["m26", "2026 · projeção demográfica · margem"]);
     } else if (S.cargo === "gov" || S.cargo === "sen") {
+      if (r26) m.push(["venc26", `2026 · ${S.turno}º turno · mais votado`]);
       m.push(["venc", `2022 · ${S.turno}º turno · mais votado`]);
     }
+    if (r26) m.push(["abst26", `2026 · ${S.turno}º turno · abstenção`]);
     m.push(["abst", `2022 · ${S.turno}º turno · abstenção`]);
     return m;
+  }
+  function maisVotado(vet, cands, ano) {
+    if (!vet || !cands.length) return null;
+    let mi = 0; for (let i = 1; i < cands.length; i++) if (vet[i] > vet[mi]) mi = i;
+    const val = vet.slice(0, cands.length).reduce((a, b) => a + b, 0);
+    return { v: val ? 100 * vet[mi] / val : null, tipo: "venc", cor: corPartido(cands[mi][0], ano), quem: cands[mi][1] };
   }
   function valorMetrica(r, id, filho) {
     if (!r) return null;
@@ -274,20 +312,22 @@
       case "m22t2": return { v: margemPr(r.pr22t2, cpr.t2), tipo: "div" };
       case "m26": return r.proj26 ? { v: 100 * (r.proj26[0] - r.proj26[1]) / (r.proj26[0] + r.proj26[1] + r.proj26[2]), tipo: "div" } : null;
       case "alvo": return r.alvo26 ? { v: r.alvo26[S.lente === "esq" ? 0 : 1], tipo: "alvo" } : null;
+      case "m26r": return { v: margemPr(r[`pr26t${S.turno}`], listaCands26("pr", S.turno)), tipo: "div" };
+      case "sw26": {
+        const a = margemPr(r[`pr22t${S.turno}`], cpr["t" + S.turno]), b = margemPr(r[`pr26t${S.turno}`], listaCands26("pr", S.turno));
+        return a == null || b == null ? null : { v: b - a, tipo: "desvio" };
+      }
       case "dalvo": {
         const f = fatiaLente(r, id, filho);
         if (!f || !r || !r.alvo26) return null;
-        return { v: f.v - r.alvo26[S.lente === "esq" ? 0 : 1], tipo: "dalvo", live: f.live };
+        return { v: f.v - r.alvo26[S.lente === "esq" ? 0 : 1], tipo: "dalvo", live: f.live, real: f.real };
       }
-      case "venc": {
-        const k = chave22(), cands = listaCands(S.cargo, S.turno), vet = r[k];
-        if (!vet) return null;
-        let mi = 0; for (let i = 1; i < cands.length; i++) if (vet[i] > vet[mi]) mi = i;
-        const val = vet.slice(0, cands.length).reduce((a, b) => a + b, 0);
-        return { v: val ? 100 * vet[mi] / val : null, tipo: "venc", cor: corPartido(cands[mi][0], "2022"), quem: cands[mi][1] };
-      }
+      case "venc": return maisVotado(r[chave22()], listaCands(S.cargo, S.turno), "2022");
+      case "venc26": return maisVotado(r[chave26()], listaCands26(S.cargo, S.turno), "2026");
+      case "abst26":
       case "abst": {
-        const k = chave22() || `pr22t${S.turno}`, vet = r[k] || r.pr22t1;
+        const a = S.metrica === "abst26" ? "26" : "22";
+        const k = (S.cargo === "df" || S.cargo === "de" ? "pr" : S.cargo) + `${a}t${S.turno}`, vet = r[k] || r[`pr${a}t1`];
         if (!vet) return null;
         const tot = vet.reduce((a, b) => a + b, 0);
         return { v: tot ? 100 * vet[vet.length - 1] / tot : null, tipo: "seq" };
@@ -333,14 +373,20 @@
   function legendaMapa() {
     const el = $("#mapa-legenda");
     const t = S.metrica;
-    if (t === "venc") { el.innerHTML = "cor do partido do mais votado"; return; }
-    if (t === "abst") { el.innerHTML = `<span>10%</span><span class="rampa">${SEQ.map((c) => `<span style="background:${c}"></span>`).join("")}</span><span>35%+</span>`; return; }
+    if (t === "venc" || t === "venc26") { el.innerHTML = "cor do partido do mais votado"; return; }
+    if (t === "sw26") {
+      const r = [...RAMPA_D].reverse().concat([css("--neutro")]).concat(RAMPA_E), c = META.campos_2026;
+      el.innerHTML = `<span>margem andou para ${c.dir[1]}</span><span class="rampa">${r.map((x) => `<span style="background:${x}"></span>`).join("")}</span><span>andou para ${c.esq[1]}</span>`;
+      return;
+    }
+    if (t === "abst" || t === "abst26") { el.innerHTML = `<span>10%</span><span class="rampa">${SEQ.map((c) => `<span style="background:${c}"></span>`).join("")}</span><span>35%+</span>`; return; }
     if (t === "dalvo") {
       const r2 = [...RAMPA_MENOS].reverse().concat([css("--neutro")]).concat(RAMPA_MAIS);
       el.innerHTML = `<span>${nomeLente()} abaixo do alvo</span><span class="rampa">${r2.map((c) => `<span style="background:${c}"></span>`).join("")}</span><span>acima do alvo</span>`;
       return;
     }
-    const rot = t === "alvo" ? [`alvo de ${nomeLente()} < 50%`, "> 50%"] : ["direita à frente", "Lula à frente"];
+    const rot = t === "alvo" ? [`alvo de ${nomeLente()} < 50%`, "> 50%"]
+      : t === "m26r" ? [`${META.campos_2026.dir[1]} à frente`, `${META.campos_2026.esq[1]} à frente`] : ["direita à frente", "Lula à frente"];
     const r = [...RAMPA_D].reverse().concat([css("--neutro")]).concat(RAMPA_E);
     el.innerHTML = `<span>${rot[0]}</span><span class="rampa">${r.map((c) => `<span style="background:${c}"></span>`).join("")}</span><span>${rot[1]}</span>`;
   }
@@ -416,8 +462,9 @@
     if (!r) return `<b>${nome}</b><br>sem dados`;
     const mv = valorMetrica(r, id, filho);
     const txt = !mv || mv.v == null ? "–" : mv.tipo === "venc" ? `${mv.quem}: ${pct(mv.v)}` : mv.tipo === "alvo" || mv.tipo === "seq" ? pct(mv.v) : sinal(mv.v) + " pts";
-    const extraLente = mv && mv.tipo === "dalvo" ? `<br><span style="color:var(--muda)">${mv.live ? "projeção ao vivo" : "projeção demográfica"} de ${nomeLente()}</span>` : "";
-    return `<b>${nome}</b><br>${(metricas().find((m) => m[0] === S.metrica) || ["", ""])[1]}: <b>${txt}</b>${extraLente}<br>aptos 2026: ${fmt.format(r.aptos26 || 0)}`;
+    const extraLente = mv && mv.tipo === "dalvo" ? `<br><span style="color:var(--muda)">${mv.real ? "resultado oficial" : mv.live ? "projeção ao vivo" : "projeção demográfica"} de ${nomeLente()}</span>` : "";
+    const v26 = votos26(r);
+    return `<b>${nome}</b><br>${(metricas().find((m) => m[0] === S.metrica) || ["", ""])[1]}: <b>${txt}</b>${extraLente}<br>aptos 2026: ${fmt.format(r.aptos26 || 0)}${v26 != null ? ` · votos 2026: ${fmt.format(v26)}` : ""}`;
   }
 
   // ------------------------------------------------------------ lista de filhos
@@ -427,24 +474,25 @@
     const col = (r, id, f) => { const mv = valorMetrica(r, id, f); return mv && mv.v != null ? (mv.tipo === "venc" ? mv.quem.split(" ")[0] + " " + pct(mv.v, 0) : mv.tipo === "alvo" || mv.tipo === "seq" ? pct(mv.v) : sinal(mv.v)) : "–"; };
     const v22col = (r) => { const t = votos22(r); return t == null ? "–" : fmt.format(t); };
     const nomeMet = (metricas().find((m) => m[0] === S.metrica) || ["", "métrica"])[1];
+    const r26 = tem26(1);
     if (nv === "br") {
       cab = "Estado";
-      linhas = Object.entries(BR.ufs).map(([uf, r]) => ({ id: uf, nome: NOME_UF[uf] || uf, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), mvv: (valorMetrica(r, uf, "uf") || {}).v, v: col(r, uf, "uf"), cor: cor(valorMetrica(r, uf, "uf")), ir: () => vai({ uf, mun: null, zona: null, local: null, secao: null }) }));
+      linhas = Object.entries(BR.ufs).map(([uf, r]) => ({ id: uf, nome: NOME_UF[uf] || uf, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), v26n: votos26(r), mvv: (valorMetrica(r, uf, "uf") || {}).v, v: col(r, uf, "uf"), cor: cor(valorMetrica(r, uf, "uf")), ir: () => vai({ uf, mun: null, zona: null, local: null, secao: null }) }));
     } else if (nv === "uf") {
       cab = "Município";
-      linhas = Object.entries(UFD.mun).map(([cd, r]) => ({ id: cd, nome: r.nome, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), mvv: (valorMetrica(r, cd, "mun") || {}).v, v: col(r, cd, "mun"), cor: cor(valorMetrica(r, cd, "mun")), ir: () => vai({ mun: cd, zona: null, local: null, secao: null }) }));
+      linhas = Object.entries(UFD.mun).map(([cd, r]) => ({ id: cd, nome: r.nome, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), v26n: votos26(r), mvv: (valorMetrica(r, cd, "mun") || {}).v, v: col(r, cd, "mun"), cor: cor(valorMetrica(r, cd, "mun")), ir: () => vai({ mun: cd, zona: null, local: null, secao: null }) }));
     } else if (nv === "mun" && MUND) {
       cab = "Zona";
-      linhas = Object.entries(MUND.zonas).map(([z, r]) => ({ id: z, nome: `Zona ${z} · ${r.ns} urnas`, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), mvv: (valorMetrica(r, null, "zona") || {}).v, v: col(r, null, "zona"), cor: cor(valorMetrica(r, null, "zona")), ir: () => vai({ zona: z, local: null, secao: null }) }));
+      linhas = Object.entries(MUND.zonas).map(([z, r]) => ({ id: z, nome: `Zona ${z} · ${r.ns} urnas`, apt: r.aptos26, v22: v22col(r), v22n: votos22(r), v26n: votos26(r), mvv: (valorMetrica(r, null, "zona") || {}).v, v: col(r, null, "zona"), cor: cor(valorMetrica(r, null, "zona")), ir: () => vai({ zona: z, local: null, secao: null }) }));
     } else if (nv === "zona" && MUND) {
       cab = "Local de votação";
-      linhas = MUND.locais.filter((l) => String(l.z) === String(S.zona)).map((l) => ({ id: l.l, nome: (l.nome || "Local " + l.l) + (l.so22 ? " (só 2022)" : ""), apt: l.aptos26, v22: v22col(l), v22n: votos22(l), mvv: (valorMetrica(l, null, "local") || {}).v, v: col(l, null, "local"), cor: cor(valorMetrica(l, null, "local")), ir: () => vai({ local: String(l.l), secao: null }) }));
+      linhas = MUND.locais.filter((l) => String(l.z) === String(S.zona)).map((l) => ({ id: l.l, nome: (l.nome || "Local " + l.l) + (l.so22 ? " (só 2022)" : ""), apt: l.aptos26, v22: v22col(l), v22n: votos22(l), v26n: votos26(l), mvv: (valorMetrica(l, null, "local") || {}).v, v: col(l, null, "local"), cor: cor(valorMetrica(l, null, "local")), ir: () => vai({ local: String(l.l), secao: null }) }));
     } else if ((nv === "local" || nv === "secao") && SECD) {
       cab = "Seção";
       const i = SECD.cols.indexOf("nr_local");
       linhas = SECD.rows.filter((r) => String(r[i]) === String(S.local)).map((r) => {
         const o = {}; SECD.cols.forEach((k, j) => { o[k] = r[j]; });
-        return { id: r[0], nome: `Seção ${r[0]}` + (o.n_agreg > 1 ? ` (+${o.n_agreg - 1} agregada)` : ""), apt: o.aptos26, v22: v22col(o), v22n: votos22(o), mvv: (valorMetrica(o, null, "secao") || {}).v, v: col(o, null, "secao"), cor: cor(valorMetrica(o, null, "secao")), ir: () => vai({ secao: String(r[0]) }) };
+        return { id: r[0], nome: `Seção ${r[0]}` + (o.n_agreg > 1 ? ` (+${o.n_agreg - 1} agregada)` : ""), apt: o.aptos26, v22: v22col(o), v22n: votos22(o), v26n: votos26(o), mvv: (valorMetrica(o, null, "secao") || {}).v, v: col(o, null, "secao"), cor: cor(valorMetrica(o, null, "secao")), ir: () => vai({ secao: String(r[0]) }) };
       });
     }
     if (!linhas.length) { el.innerHTML = ""; return; }
@@ -455,9 +503,10 @@
           <option value="apt">maiores (aptos 2026)</option>
           <option value="nome">A → Z</option>
           <option value="v22">mais votos em 2022</option>
+          ${r26 ? '<option value="v26">mais votos em 2026</option>' : ""}
           <option value="mv">${S.metrica === "dalvo" ? "× alvo (maior → menor)" : "métrica do mapa"}</option>
         </select></div>
-      <table><thead><tr><th>${cab} <span style="font-weight:400;color:var(--muda)">· toque para abrir</span></th><th class="num">votos 2022</th><th class="num">aptos 2026</th><th class="num" title="${nomeMet}">${S.metrica === "dalvo" ? "× alvo" : "mapa"}</th><th></th></tr></thead><tbody id="lb-corpo"></tbody></table>`;
+      <table><thead><tr><th>${cab} <span style="font-weight:400;color:var(--muda)">· toque para abrir</span></th><th class="num">votos 2022</th>${r26 ? '<th class="num">votos 2026</th>' : ""}<th class="num">aptos 2026</th><th class="num" title="${nomeMet}">${S.metrica === "dalvo" ? "× alvo" : "mapa"}</th><th></th></tr></thead><tbody id="lb-corpo"></tbody></table>`;
     const busca = el.querySelector("#lb-busca"), ordem = el.querySelector("#lb-ordem");
     busca.value = FILTRO;
     ordem.value = ORDEM;
@@ -468,11 +517,12 @@
       const vn = (x) => (x == null || isNaN(x) ? -Infinity : +x);
       if (ORDEM === "nome") visiveis.sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt", { numeric: true }));
       else if (ORDEM === "v22") visiveis.sort((a, b) => vn(b.v22n) - vn(a.v22n));
+      else if (ORDEM === "v26") visiveis.sort((a, b) => vn(b.v26n) - vn(a.v26n));
       else if (ORDEM === "mv") visiveis.sort((a, b) => vn(b.mvv) - vn(a.mvv));
       else visiveis.sort((a, b) => (b.apt || 0) - (a.apt || 0));
       const tb = el.querySelector("#lb-corpo");
-      tb.innerHTML = visiveis.map((l, k) => `<tr class="clica" data-k="${k}"><td><span class="barrinha" style="width:8px;background:${l.cor}"></span> ${l.nome}</td><td class="num">${l.v22 || "–"}</td><td class="num">${fmt.format(l.apt || 0)}</td><td class="num">${l.v}</td><td class="seta">›</td></tr>`).join("")
-        || `<tr><td colspan="5" style="color:var(--muda)">nada encontrado — limpe a busca</td></tr>`;
+      tb.innerHTML = visiveis.map((l, k) => `<tr class="clica" data-k="${k}"><td><span class="barrinha" style="width:8px;background:${l.cor}"></span> ${l.nome}</td><td class="num">${l.v22 || "–"}</td>${r26 ? `<td class="num">${l.v26n == null ? "–" : fmt.format(l.v26n)}</td>` : ""}<td class="num">${fmt.format(l.apt || 0)}</td><td class="num">${l.v}</td><td class="seta">›</td></tr>`).join("")
+        || `<tr><td colspan="${r26 ? 6 : 5}" style="color:var(--muda)">nada encontrado — limpe a busca</td></tr>`;
       tb.querySelectorAll("tr.clica").forEach((tr) => tr.addEventListener("click", () => visiveis[+tr.dataset.k].ir()));
     };
     corpo();
@@ -534,7 +584,8 @@
         <td class="${dlt > 0 ? "delta-pos" : dlt < 0 ? "delta-neg" : ""}">${dlt == null ? "–" : sinal(dlt)}</td></tr>`;
     });
     let extras = [];
-    if (!S.eixo && (S.cargo === "pr" || S.cargo === "gov" || S.cargo === "sen")) {
+    const apurado26 = (c26 || []).length > 0 && c26.every((c) => c.ap != null && c.ap >= 0.999 * (c.n || 0));
+    if (!S.eixo && !apurado26 && (S.cargo === "pr" || S.cargo === "gov" || S.cargo === "sen")) {
       const lista26 = S.cargo === "pr" ? (META.pr["2026"] && META.pr["2026"].t1) || []
         : (UFD && UFD.cands[S.cargo] && UFD.cands[S.cargo]["2026"]) || [];
       const ja = new Set((c26 || []).filter((c) => c.nr).map((c) => c.nr));
@@ -563,13 +614,15 @@
     const anc = pv ? 100 * u.proj26[L] / pv : null;
     const alvoC = u.alvo26[L], alvoO = u.alvo26[1 - L];
     const ancO = pv ? 100 * u.proj26[1 - L] / pv : null;
-    const shLive = lv ? (L === 0 ? lv.sh_esq : lv.sh_dir) : null;
-    const atual = shLive != null ? shLive : anc;
+    const real = fatiaReal26(u, L === 0 ? "esq" : "dir"), realO = fatiaReal26(u, L === 0 ? "dir" : "esq");
+    const shLive = real == null && lv ? (L === 0 ? lv.sh_esq : lv.sh_dir) : null;
+    const atual = real != null ? real : shLive != null ? shLive : anc;
     const marcas = [
       { v: alvoC, nome: `alvo de ${cand[1]}`, cor: corC, oco: true },
       { v: anc, nome: "projeção demográfica", cor: css("--muda") },
       { v: real22dois, nome: "2022 · 2º turno (dois a dois)", cor: css("--tinta-2") },
     ];
+    if (real != null) marcas.push({ v: real, nome: `2026 · ${S.turno}º turno · resultado`, cor: corC });
     if (shLive != null) marcas.push({ v: shLive, nome: "ao vivo: projeção", cor: corC });
     const vs = marcas.map((m) => m.v).filter((v) => v != null && isFinite(v));
     const lo = Math.floor(Math.min(...vs, 50) - 3), hi = Math.ceil(Math.max(...vs, 50) + 3);
@@ -577,16 +630,16 @@
     const nv = nivel();
     const dlt = atual != null && alvoC != null ? atual - alvoC : null;
     let numeros = `
-      <div><div class="n" style="color:${corC}">≈ ${pct(atual)}</div><div class="r">${cand[1]} ${shLive != null ? `projeção ao vivo · ${pct(lv.pct, 0)} apurado` : "pela demografia"} (% dos válidos)</div></div>
+      <div><div class="n" style="color:${corC}">${real != null ? "" : "≈ "}${pct(atual)}</div><div class="r">${cand[1]} ${real != null ? `· resultado oficial do ${S.turno}º turno (pela demografia: ${pct(anc)})` : shLive != null ? `projeção ao vivo · ${pct(lv.pct, 0)} apurado` : "pela demografia"} (% dos válidos)</div></div>
       <div><div class="n">${pct(alvoC)}</div><div class="r">alvo de ${cand[1]} aqui (50%+1 no país)</div></div>
       <div><div class="n ${dlt >= 0 ? "delta-pos" : "delta-neg"}">${sinal(dlt)}</div><div class="r">${cand[1]} − alvo (pontos de válidos)</div></div>
-      <div><div class="n">${pct(ancO)} <span style="font-size:14px;color:var(--muda)">alvo ${pct(alvoO)}</span></div><div class="r">${outro[1]}: projeção e alvo</div></div>`;
-    if (nv === "br" && LIVE && LIVE.pr) {
+      <div><div class="n">${pct(realO != null ? realO : ancO)} <span style="font-size:14px;color:var(--muda)">alvo ${pct(alvoO)}</span></div><div class="r">${outro[1]}: ${realO != null ? "resultado" : "projeção"} e alvo</div></div>`;
+    if (nv === "br" && LIVE && LIVE.pr && real == null) {
       const p = LIVE.pr;
       numeros += `<div><div class="n">${pct(100 * p.p_lider, 1)}</div><div class="r">chance de ${p.lider} terminar à frente (±${p.sigma} pts)</div></div>
         <div><div class="n">${pct(100 * (L === 0 ? p.p_esq50 : p.p_dir50), 1)}</div><div class="r">chance de ${cand[1]} liquidar no 1º turno</div></div>`;
     }
-    el.innerHTML = `<h3>Alvo de vitória no 1º turno — fatia dos válidos com ganho relativo igual em todo o país</h3>
+    el.innerHTML = `<h3>Alvo de vitória no 1º turno — fatia dos válidos com ganho relativo igual em todo o país${real != null ? " · com o resultado oficial" : ""}</h3>
       <div class="linhas">${numeros}</div>
       <div class="trilho"><div class="fundo"></div>${nv === "br" ? `<div class="meio" style="left:${x(50)}"></div>` : ""}
         ${marcas.filter((m) => m.v != null && isFinite(m.v)).map((m) => `<div class="marca ${m.oco ? "oco" : ""}" style="left:${x(m.v)};background:${m.cor};color:${m.cor}" title="${m.nome}: ${pct(m.v)}"></div>`).join("")}</div>
@@ -594,6 +647,7 @@
         <span style="margin-left:auto">escala ${lo}%–${hi}%</span></div>`;
   }
 
+  let DEPANO = null;                 // ano da tabela de deputados (null = o mais recente publicado)
   async function painelDeputados(u) {
     const box = $("#deputados");
     const dep = S.cargo === "df" || S.cargo === "de";
@@ -601,15 +655,43 @@
     if (!dep) return null;
     if (!S.uf || S.uf === "ZZ") { box.innerHTML = "<p>Escolha um estado para ver os candidatos a deputado.</p>"; return null; }
     DEP = await Dados.json(`dep/${S.uf}.json`);
-    const nv = nivel();
+    DEPM = nivel() !== "uf" && S.mun ? await Dados.json(`dep/${S.uf}/${S.mun}.json`) : null;
+    const tem26d = (DEP[S.cargo]["2026"] || []).some((c) => c.length > 3);   // [nr, nome, partido, votos, sit]
+    const ano = tem26d && DEPANO !== "2022" ? "2026" : "2022";
+    const [r22, r26] = await Promise.all([depDoAno("2022", u), tem26d ? depDoAno("2026", u) : null]);
+    const r = ano === "2026" ? r26 : r22;
+    const lista = DEP[S.cargo][ano];
+    const nomes = Object.fromEntries(lista.map((c) => [c[0], c]));
+    const soCand = r.linhas.filter(([nr]) => !nr.startsWith("L"));
+    const tot = soCand.reduce((a, c) => a + c[1], 0);
+    const abas = tem26d ? ` <span class="grupo abas-ano" role="tablist">${["2026", "2022"].map((a) => `<button role="tab" data-a="${a}" aria-selected="${a === ano}">${a}</button>`).join("")}</span>` : "";
+    box.innerHTML = `<h3 style="margin:0 0 6px;font-size:15px">Candidatos a ${S.cargo === "df" ? "deputado federal" : "deputado estadual"} · ${ano}${abas}</h3>${r.nota ? `<p class="nota">${r.nota}</p>` : ""}
+      <input type="search" placeholder="buscar candidato ou partido" aria-label="buscar candidato">
+      <div class="rolagem"><table><thead><tr><th>#</th><th>candidato</th><th>partido</th><th>votos</th><th>% nominais</th><th>situação</th></tr></thead><tbody></tbody></table></div>
+      <p class="nota" style="font-size:12px;color:var(--muda)">${tem26d ? "Situação: totalização oficial do TSE no estado (eleito por quociente, por média ou suplente)." : `2026: ${DEP[S.cargo]["2026"].length} candidaturas registradas no estado.`}</p>`;
+    const tb = box.querySelector("tbody");
+    const sit = (nr) => { const s = nomes[nr] && nomes[nr][4]; return !s ? "" : s.startsWith("Eleito") ? `<b>${s.replace("Eleito Por Qp", "eleito (QP)").replace("Eleito Por Média", "eleito (média)")}</b>` : s.toLowerCase(); };
+    const pinta = (q) => {
+      q = (q || "").toLowerCase();
+      tb.innerHTML = soCand.filter(([nr]) => !q || (nomes[nr] && (nomes[nr][1] + " " + nomes[nr][2] + " " + nr).toLowerCase().includes(q))).slice(0, 400)
+        .map(([nr, v], k) => `<tr><td>${k + 1}</td><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${corPartido(nr, ano)};margin-right:6px"></i>${nomes[nr] ? nomes[nr][1] : nr} <span style="color:var(--muda)">${nr}</span></td><td>${nomes[nr] ? nomes[nr][2] : ""}</td><td>${fmt.format(v)}</td><td>${pct(100 * v / tot)}</td><td>${sit(nr)}</td></tr>`).join("");
+    };
+    pinta("");
+    box.querySelector("input").addEventListener("input", (e) => pinta(e.target.value));
+    box.querySelectorAll(".abas-ano button").forEach((b) => b.addEventListener("click", () => { DEPANO = b.dataset.a; render(); }));
+    return { d22: r22.d, d26: r26 && r26.d };
+  }
+
+  /* deputados de um ano no nivel corrente -> {linhas: [[nr | "L"+partido, votos]], nota, d: {vet, cands} por partido} */
+  async function depDoAno(ano, u) {
+    const suf = ano === "2026" ? "26" : "", kpr = `pr${ano.slice(2)}t1`, nv = nivel();
     let registro = null, linhas = null, nota = "", usouDepsec = false;
-    if (nv !== "uf" && S.mun) {
-      DEPM = await Dados.json(`dep/${S.uf}/${S.mun}.json`);
-      const d = DEPM && DEPM[S.cargo];
+    if (nv !== "uf" && DEPM) {
+      const d = DEPM[S.cargo + suf];
       if (d) registro = nv === "mun" ? d.mun : (d.zonas[S.zona] || (Object.keys(d.zonas).length === 0 ? d.mun : null));
     }
     if (nv === "local" || nv === "secao") {
-      const ds = await Dados.json(`depsec/${S.mun}/${S.zona}_${S.cargo}.json`);
+      const ds = await Dados.json(`depsec/${S.mun}/${S.zona}_${S.cargo}${suf}.json`);
       if (ds && ds.sec) {
         usouDepsec = true;
         let alvos;
@@ -621,32 +703,16 @@
         const acc = {};
         for (const sNum of alvos) for (const [nr, v] of (ds.sec[sNum] || [])) acc[nr] = (acc[nr] || 0) + v;
         linhas = Object.entries(acc).sort((a, b) => b[1] - a[1]);
-        if (nv === "local") nota = `<p class='nota'>Soma das ${alvos.length} urnas deste local.</p>`;
+        if (nv === "local") nota = `Soma das ${alvos.length} urnas deste local${ano === "2022" ? " (pela numeração de 2026)" : ""}.`;
       } else {
-        nota = "<p class='nota'>O detalhe por seção não está publicado no Pages (400 MB): disponível no modo local/túnel após <code>web.gera_estatico --depsec</code>. Abaixo, a zona.</p>";
+        nota = "O detalhe por seção não está publicado no Pages (400 MB por ano): disponível no modo local/túnel após <code>web.gera_estatico --depsec</code>. Abaixo, a zona.";
         if (registro) linhas = registro.cands;
       }
-    } else if (nv === "uf") linhas = (DEP[S.cargo]["2022"] || []).map((c) => [c[0], c[3]]);
+    } else if (nv === "uf") linhas = (DEP[S.cargo][ano] || []).filter((c) => c.length > 3).map((c) => [c[0], c[3]]);
     else if (registro) linhas = registro.cands;
     linhas = linhas || [];
-    const lista = DEP[S.cargo]["2022"];
-    const nomes = Object.fromEntries(lista.map((c) => [c[0], c]));
-    const soCand = linhas.filter(([nr]) => !nr.startsWith("L"));
-    const tot = soCand.reduce((a, c) => a + c[1], 0);
-    box.innerHTML = `<h3 style="margin:0 0 6px;font-size:15px">Candidatos a ${S.cargo === "df" ? "deputado federal" : "deputado estadual"} · 2022</h3>${nota}
-      <input type="search" placeholder="buscar candidato ou partido" aria-label="buscar candidato">
-      <div class="rolagem"><table><thead><tr><th>#</th><th>candidato</th><th>partido</th><th>votos</th><th>% nominais</th></tr></thead><tbody></tbody></table></div>
-      <p class="nota" style="font-size:12px;color:var(--muda)">2026: ${DEP[S.cargo]["2026"].length} candidaturas registradas no estado.</p>`;
-    const tb = box.querySelector("tbody");
-    const pinta = (q) => {
-      q = (q || "").toLowerCase();
-      tb.innerHTML = soCand.filter(([nr]) => !q || (nomes[nr] && (nomes[nr][1] + " " + nomes[nr][2] + " " + nr).toLowerCase().includes(q))).slice(0, 400)
-        .map(([nr, v], k) => `<tr><td>${k + 1}</td><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${corPartido(nr, "2022")};margin-right:6px"></i>${nomes[nr] ? nomes[nr][1] : nr} <span style="color:var(--muda)">${nr}</span></td><td>${nomes[nr] ? nomes[nr][2] : ""}</td><td>${fmt.format(v)}</td><td>${pct(100 * v / tot)}</td></tr>`).join("");
-    };
-    pinta("");
-    box.querySelector("input").addEventListener("input", (e) => pinta(e.target.value));
     // vetor por partido para as bolhas: nominais + legenda + brancos/nulos + abstencao
-    if (!linhas.length) return null;
+    if (!linhas.length) return { linhas, nota, d: null };
     const porP = {};
     for (const [nr, v] of linhas) {
       const pp = nr.startsWith("L") ? nr.slice(1) : nr.slice(0, 2);
@@ -654,19 +720,19 @@
     }
     if (registro && !usouDepsec) for (const [pp, v] of Object.entries(registro.leg)) porP[pp] = (porP[pp] || 0) + v;
     const partidos = Object.entries(porP).sort((a, b) => b[1] - a[1]);
-    const pseudo = partidos.map(([pp]) => [pp, (META.partidos["2022"][pp] || {}).sigla || pp, (META.partidos["2022"][pp] || {}).sigla || pp]);
-    let abst = registro ? registro.abst : (u && u.pr22t1 ? u.pr22t1[u.pr22t1.length - 1] : 0);
+    const pseudo = partidos.map(([pp]) => [pp, (META.partidos[ano][pp] || {}).sigla || pp, (META.partidos[ano][pp] || {}).sigla || pp]);
+    let abst = registro ? registro.abst : (u && u[kpr] ? u[kpr][u[kpr].length - 1] : 0);
     let bn = registro ? registro.bn : 0;
     if (usouDepsec) {
       // na urna, o comparecimento e o mesmo em todo cargo: brancos+nulos de deputado
       // = comparecimento (do presidente) - validos de deputado desta unidade
-      const comp = votos22(u);
+      const comp = votos22(u, kpr);
       const val = linhas.reduce((a, c) => a + c[1], 0);
       bn = comp != null ? Math.max(comp - val, 0) : 0;
-      abst = u && u.pr22t1 ? u.pr22t1[u.pr22t1.length - 1] : 0;
+      abst = u && u[kpr] ? u[kpr][u[kpr].length - 1] : 0;
     }
     const vet = partidos.map((x) => x[1]).concat([bn, 0, abst]);
-    return { vet, cands: pseudo };
+    return { linhas, nota, d: { vet, cands: pseudo } };
   }
 
   // ------------------------------------------------------------ render
@@ -732,19 +798,32 @@
     $("#titulo-unidade").textContent = nome;
     const sub = [];
     if (u && u.aptos26) sub.push(`${fmt.format(u.aptos26)} aptos em 2026`);
-    const v22u = votos22(u);
+    const v22u = votos22(u), v26u = votos26(u);
     if (v22u != null) sub.push(`${fmt.format(v22u)} votos em 2022 (1º turno)`);
+    if (v26u != null) sub.push(`${fmt.format(v26u)} em 2026`);
     if (u && u.ns) sub.push(`${fmt.format(u.ns)} urnas`);
     if (nv === "secao" && u) sub.push(`âncora: ${u.nivel_ancora === "secao" ? "a própria seção em 2022" : "média do " + u.nivel_ancora}`);
     if (nv === "local" && u && u.so22) sub.push("local que existia em 2022 e não recebe urnas em 2026");
     $("#sub-unidade").textContent = sub.join(" · ");
 
-    let c22 = null, nota22 = "";
+    // perfil do eleitorado (cadastro TSE jul/2026): [% fem, 16-24, 25-39, 40-59, 60+, fund, médio, sup]
+    const pfEl = $("#perfil-unidade"), pf = u && u.pf;
+    if (pf) {
+      const fp = (x) => x == null ? "–" : String(x).replace(".", ",") + "%";
+      pfEl.innerHTML = [
+        `<span class="pf-g">perfil: <b>${fp(pf[0])}</b> mulheres</span>`,
+        `<span class="pf-g">idade: 16–24 <b>${fp(pf[1])}</b> · 25–39 <b>${fp(pf[2])}</b> · 40–59 <b>${fp(pf[3])}</b> · 60+ <b>${fp(pf[4])}</b></span>`,
+        `<span class="pf-g">escolaridade: fund. <b>${fp(pf[5])}</b> · médio <b>${fp(pf[6])}</b> · sup. <b>${fp(pf[7])}</b></span>`].join("");
+      pfEl.hidden = false;
+    } else pfEl.hidden = true;
+
+    let c22 = null, nota22 = "", dep26 = null;
     const dep = S.cargo === "df" || S.cargo === "de";
     if (dep) {
       const d = await painelDeputados(u);
-      if (d) { c22 = categorias(d.vet, d.cands, "2022", true); nota22 = "por partido (nominal + legenda)"; }
+      if (d && d.d22) { c22 = categorias(d.d22.vet, d.d22.cands, "2022", true); nota22 = "por partido (nominal + legenda)"; }
       else nota22 = nv === "br" ? "escolha um estado" : "sem detalhe neste nível";
+      dep26 = d && d.d26;
     } else {
       $("#deputados").hidden = true;
       const k = chave22();
@@ -758,7 +837,16 @@
     const bu = registroBU();
     const cbu = catsBU(bu, S.cargo);
     const cest = catsEstadualLive(u);
-    if (cbu) {
+    const k26 = chave26(), vet26 = k26 && u ? u[k26] : null;
+    if (dep26) {
+      c26 = categorias(dep26.vet, dep26.cands, "2026", true);
+      for (const c of c26) c.ap = c.n;
+      nota26 = "resultado oficial · por partido (nominal + legenda)";
+    } else if (vet26) {
+      c26 = categorias(vet26, listaCands26(S.cargo, S.turno), "2026");
+      for (const c of c26) c.ap = c.n;
+      nota26 = "resultado oficial (TSE, dados abertos)" + (S.cargo === "sen" ? " · 2 vagas: cada eleitor deu 2 votos" : "");
+    } else if (cbu) {
       c26 = cbu;
       nota26 = `apurado · ${fmt.format(LIVE_MUN.n_bu)} boletins raspados no município (${LIVE_MUN.instante.slice(0, 5)})`;
     } else if (cest) {

@@ -68,6 +68,14 @@ ALVOS = [
     (f"{TSE_CDN}/perfil_eleitor_secao/perfil_eleitor_secao_2026_{uf}.zip",
      BRUTO_TSE / "2026" / "perfil_secao" / f"perfil_eleitor_secao_2026_{uf}.zip")
     for uf in UFS
+] + [
+    # 2026 apurado (publicado em 06/10/2026, antes de entrar no catalogo CKAN)
+    (f"{TSE_CDN}/detalhe_votacao_secao/detalhe_votacao_secao_2026.zip",
+     BRUTO_TSE / "2026" / "detalhe_votacao_secao_2026.zip"),
+] + [
+    (f"{TSE_CDN}/votacao_secao/votacao_secao_2026_{uf}.zip",
+     BRUTO_TSE / "2026" / f"votacao_secao_2026_{uf}.zip")
+    for uf in ["BR"] + UFS
 ]
 
 

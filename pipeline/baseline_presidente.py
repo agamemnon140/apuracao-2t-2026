@@ -25,7 +25,8 @@ BRUTO = BRUTO_TSE
 SAIDA = BASELINE
 
 # quem e "esquerda" e "direita" em cada ciclo, pelo numero na urna
-EIXO = {2022: {"esq": "13", "dir": "22"},   # Lula x Bolsonaro
+EIXO = {2026: {"esq": "13", "dir": "22"},   # Lula x Flavio Bolsonaro
+        2022: {"esq": "13", "dir": "22"},   # Lula x Bolsonaro
         2018: {"esq": "13", "dir": "17"}}   # Haddad x Bolsonaro
 BRANCO, NULO = "95", "96"
 COLS = ["t1_esq", "t1_dir", "t1_outros", "t1_branco", "t1_nulo",

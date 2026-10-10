@@ -34,7 +34,8 @@ def acumula_uf(ano: int, uf: str, acc: dict) -> int:
     with z.open(f"perfil_eleitor_secao_{ano}_{uf}.csv") as fh:
         rd = csv.DictReader(io.TextIOWrapper(fh, encoding="latin-1"), delimiter=";")
         for r in rd:
-            q = int(r["QT_ELEITORES_PERFIL"])
+            # 2022: QT_ELEITORES_PERFIL; 2026: QT_ELEITORES
+            q = int(r.get("QT_ELEITORES_PERFIL") or r.get("QT_ELEITORES") or 0)
             if not q:
                 continue
             chave = (uf, int(r["CD_MUNICIPIO"]), int(r["NR_ZONA"]), int(r["NR_SECAO"]))
