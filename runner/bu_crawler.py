@@ -32,9 +32,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from runner import imgbu
+from runner import budat, imgbu
 from tools.rede import get, get_json
-from sintetico.caminhos import VIVO
+from sintetico.caminhos import SAIDA as SAIDA_SINT, VIVO
 
 BASE = "https://resultados.tse.jus.br"
 LIVE = VIVO
@@ -121,22 +121,28 @@ def uma_secao(amb, ciclo, pleito, uf, mun, zona, secao, so_aux=False):
     st, j = get_json(u, timeout=15, tentativas=1)
     if st != 200 or not j:
         return ("aguardando" if st == 404 else "erro"), None, st, f"aux HTTP {st}"
-    hs = [h for h in j.get("hashes", []) if str(h.get("st", "")).lower().startswith("totaliz")]
+    # 2022: "Totalizado"; 2026: "Recebido" (o imgbu ja esta publicado na recepcao)
+    hs = [h for h in j.get("hashes", []) if str(h.get("st", "")).lower().startswith(("totaliz", "receb"))]
     if not hs:
         return "aguardando", None, st, j.get("st", "")
     h = hs[-1]
     if so_aux:
         return "dry", {"hr": f"{h.get('dr')} {h.get('hr')}"}, st, None
-    arq = next((a["nm"] for a in h.get("arq", []) if a.get("tp") == "imgbu"), None)
+    # 2026: o imgbu (texto) sumiu do arquivo-urna; o bu.dat (DER) e o caminho principal
+    arq = next((a["nm"] for a in h.get("arq", []) if a.get("tp") == "bu"), None)
+    parser = budat.parse
     if not arq:
-        return "sem_imgbu", {"hr": f"{h.get('dr')} {h.get('hr')}"}, st, "sem imgbu"
+        arq = next((a["nm"] for a in h.get("arq", []) if a.get("tp") == "imgbu"), None)
+        parser = imgbu.parse
+    if not arq:
+        return "sem_imgbu", {"hr": f"{h.get('dr')} {h.get('hr')}"}, st, "sem bu/imgbu"
     st2, b = get(f"{d}/{h['hash']}/{arq}", timeout=20, tentativas=1)
     if st2 != 200:
-        return "erro", None, st2, f"imgbu HTTP {st2}"
+        return "erro", None, st2, f"bu HTTP {st2}"
     try:
-        bu = imgbu.parse(b)
-    except ValueError as e:
-        return "parse_erro", None, st2, str(e)[:200]
+        bu = parser(b)
+    except (ValueError, IndexError, KeyError) as e:
+        return "parse_erro", None, st2, f"{type(e).__name__}: {e}"[:200]
     bu["hr"] = f"{h.get('dr')} {h.get('hr')}"
     return "ok", bu, st2, None
 

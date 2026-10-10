@@ -145,7 +145,8 @@ class FeedAoVivo:
         return out
 
     def pct_estadual(self) -> dict:
-        return {uf: 100 * l["st"] / max(l["ts"], 1) for uf, l in self._uf("0003").items()}
+        return {uf: 100 * l["st"] / max(l["ts"], 1) for uf, l in self._uf("0003").items()
+                if l.get("ts") and l.get("st") is not None}
 
 
 def le_boletins(nd: Needle, nr_esq: str, nr_dir: str):
@@ -444,40 +445,46 @@ def main() -> int:
     n = 0
     while True:
         t0 = time.time()
-        feed, obs, instante = fonte.le()
-        r = ctx.nd.estima(obs, feed, params)
-        saida = monta_saida(ctx, r, instante)
-        pct_uf = {u: s["pct_secoes"] for u, s in r["uf"].items()}
-        tela = getattr(fonte, "tela_estadual", lambda: {})()
-        if a.modo == "ao-vivo":
-            pct_uf.update(getattr(fonte, "pct_estadual", lambda: {})())
-        t_est = time.time()
-        govs, sens = est.paineis(obs, pct_uf, tela)
-        logging.info("estaduais: %d governos, %d senados projetados [%.1fs]",
-                     sum(g.get("projetado", False) for g in govs), sum(g.get("projetado", False) for g in sens),
-                     time.time() - t_est)
-        if n % 5 == 0:
-            dep.dispara(obs)
-        escreve(ctx, r, saida, a.publicar, govs, sens, dep.res)
-        if a.modo == "ao-vivo" and n % 10 == 0:            # status das fontes (o workflow fica quieto a noite)
-            subprocess.run([sys.executable, str(RAIZ / "tools" / "checa_fontes.py"), str(DOCS / "live.json")],
-                           cwd=RAIZ, capture_output=True, timeout=120)
-        if a.modo == "ao-vivo":
-            from runner.exporta_bu import exporta
-            t_ex = time.time()
-            n_ex, desde_bu = exporta(ctx.nd.anc, BU_DB, DOCS / "live" / "mun", desde_bu)
-            if n_ex:
-                logging.info("boletins exportados para o mapa: %d municipios [%.1fs]", n_ex, time.time() - t_ex)
-        st = pub(saida["instante"])
-        pr = saida["pr"]
-        logging.info("%s  %5.1f%% apurado  %s %.2f%% x %s %.2f%%  margem %+.2f (tela %s)  sigma %.2f  "
-                     "P(%s)=%.3f  bu=%d  [%s, %.1fs]",
-                     saida["instante"], saida["pct_secoes"], ctx.nomes["esq"], pr["sh_esq"],
-                     ctx.nomes["dir"], pr["sh_dir"], pr["margem"], pr["tela_margem"], pr["sigma"],
-                     pr["lider"], pr["p_lider"], saida["n_bu"], st, time.time() - t0)
-        (LIVE_DIR / "estado_ciclo.json").write_text(json.dumps(
-            {"ciclo": n, "instante": saida["instante"], "pct": saida["pct_secoes"], "margem": pr["margem"],
-             "sigma": pr["sigma"], "publicacao": st, "gerado_em": saida["gerado_em"]}), "utf-8")
+        try:
+            feed, obs, instante = fonte.le()
+            r = ctx.nd.estima(obs, feed, params)
+            saida = monta_saida(ctx, r, instante)
+            pct_uf = {u: s["pct_secoes"] for u, s in r["uf"].items()}
+            tela = getattr(fonte, "tela_estadual", lambda: {})()
+            if a.modo == "ao-vivo":
+                pct_uf.update(getattr(fonte, "pct_estadual", lambda: {})())
+            t_est = time.time()
+            govs, sens = est.paineis(obs, pct_uf, tela)
+            logging.info("estaduais: %d governos, %d senados projetados [%.1fs]",
+                         sum(g.get("projetado", False) for g in govs), sum(g.get("projetado", False) for g in sens),
+                         time.time() - t_est)
+            if n % 5 == 0:
+                dep.dispara(obs)
+            escreve(ctx, r, saida, a.publicar, govs, sens, dep.res)
+            if a.modo == "ao-vivo" and n % 10 == 0:        # status das fontes (o workflow fica quieto a noite)
+                subprocess.run([sys.executable, str(RAIZ / "tools" / "checa_fontes.py"), str(DOCS / "live.json")],
+                               cwd=RAIZ, capture_output=True, timeout=120)
+            if a.modo == "ao-vivo":
+                from runner.exporta_bu import exporta
+                t_ex = time.time()
+                n_ex, desde_bu = exporta(ctx.nd.anc, BU_DB, DOCS / "live" / "mun", desde_bu)
+                if n_ex:
+                    logging.info("boletins exportados para o mapa: %d municipios [%.1fs]", n_ex, time.time() - t_ex)
+            st = pub(saida["instante"])
+            pr = saida["pr"]
+            logging.info("%s  %5.1f%% apurado  %s %.2f%% x %s %.2f%%  margem %+.2f (tela %s)  sigma %.2f  "
+                         "P(%s)=%.3f  bu=%d  [%s, %.1fs]",
+                         saida["instante"], saida["pct_secoes"], ctx.nomes["esq"], pr["sh_esq"],
+                         ctx.nomes["dir"], pr["sh_dir"], pr["margem"], pr["tela_margem"], pr["sigma"],
+                         pr["lider"], pr["p_lider"], saida["n_bu"], st, time.time() - t0)
+            (LIVE_DIR / "estado_ciclo.json").write_text(json.dumps(
+                {"ciclo": n, "instante": saida["instante"], "pct": saida["pct_secoes"], "margem": pr["margem"],
+                 "sigma": pr["sigma"], "publicacao": st, "gerado_em": saida["gerado_em"]}), "utf-8")
+        except Exception:                                  # inclui MemoryError: pula o ciclo, nao a noite
+            logging.exception("ciclo perdido; seguindo no proximo")
+            time.sleep(max(30.0, a.intervalo - (time.time() - t0)))
+            n += 1
+            continue
         n += 1
         if a.ciclos and n >= a.ciclos:
             break

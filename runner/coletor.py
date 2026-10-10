@@ -1,10 +1,16 @@
 """Coletor do feed de resultados do TSE para a noite de 2026.
 
 Tres camadas, todas normalizadas no mesmo formato ("leitura"):
-  -r  BR e 27 UFs por cargo                  (dados-simplificados; 1 req por abrangencia)
-  -u  um municipio, todos os cargos daquela eleicao? nao: um cargo por arquivo; traz
-      secoes totalizadas (st/ts), comparecimento, brancos, nulos e votos por candidato
-  -e  UF inteira por municipio num arquivo so (so votos por candidato; pode nao existir)
+  -e  resultado por abrangencia (br e UFs), 1 req por cargo+abrangencia. Em 2026 a arvore
+      dados-simplificados/-r de 2022/24 sumiu do servidor; o app oficial passou a ler
+      {ele}/dados/{abr}/{abr}-c{cargo}-e{ele}-e.json. O miolo pode vir flat (estilo -r),
+      em blocos aninhados (estilo -u) ou como lista "abr" (estilo -e de 2024):
+      parse_feed_abr detecta.
+  -ab {ele}/dados/br/br-e{ele}-ab.json (novo em 2026): secoes totalizadas (st/ts),
+      eleitorado e comparecimento por UF — alimenta o nivel uf quando o -e nao traz.
+  -u  um municipio, um cargo por arquivo; traz secoes totalizadas (st/ts), comparecimento,
+      brancos, nulos e votos por candidato (mesmo caminho/esquema de 2024; conferido
+      zerado no ar em 04/10/2026)
 
 Leitura (dict):
   nivel "br"|"uf"|"mu", uf (minusculo), cd_mun (int|None), ele (int), cargo ("0001"...),
@@ -52,8 +58,8 @@ THREADS = 16
 
 
 # ---------------------------------------------------------------- URLs
-def url_r(amb, ciclo, ele, abr, cargo):
-    return f"{BASE}/{amb}/{ciclo}/{ele}/dados-simplificados/{abr}/{abr}-c{cargo}-e{int(ele):06d}-r.json"
+def url_ab(amb, ciclo, ele, abr):
+    return f"{BASE}/{amb}/{ciclo}/{ele}/dados/{abr}/{abr}-e{int(ele):06d}-ab.json"
 
 
 def url_e(amb, ciclo, ele, uf, cargo):
@@ -81,13 +87,71 @@ def _i(x) -> int:
 
 
 def parse_r(j: dict, cargo: str) -> dict:
+    s = j.get("s")
+    if isinstance(s, dict):          # blocos aninhados estilo -u (visto nos arquivos de 2026)
+        e, v = j.get("e", {}), j.get("v", {})
+        tot = {"ts": _i(s.get("ts")), "st": _i(s.get("st")), "e": _i(e.get("te")),
+               "ea": _i(e.get("est")), "c": _i(e.get("c")), "vb": _i(v.get("vb")),
+               "vn": _i(v.get("tvn", v.get("vn"))), "vv": _i(v.get("vv"))}
+    else:                            # flat, estilo -r de 2022/24
+        tot = {"ts": _i(s), "st": _i(j.get("st")), "e": _i(j.get("e")), "ea": _i(j.get("ea")),
+               "c": _i(j.get("c")), "vb": _i(j.get("vb")), "vn": _i(j.get("tvn", j.get("vn"))),
+               "vv": _i(j.get("vv"))}
     return {"nivel": j.get("tpabr", "uf"), "uf": j.get("cdabr", ""), "cd_mun": None,
-            "ele": _i(j.get("ele")), "cargo": cargo,
-            "ts": _i(j.get("s")), "st": _i(j.get("st")), "e": _i(j.get("e")), "ea": _i(j.get("ea")),
-            "c": _i(j.get("c")),
-            "vb": _i(j.get("vb")), "vn": _i(j.get("tvn", j.get("vn"))), "vv": _i(j.get("vv")),
+            "ele": _i(j.get("ele")), "cargo": cargo, **tot,
             "cand": {c["n"]: _i(c.get("vap")) for c in j.get("cand", [])}, "leg": {},
             "dt": j.get("dt", ""), "ht": j.get("ht", "")}
+
+
+def parse_feed_abr(j: dict, cargo: str, abr: str) -> list[dict]:
+    """Arquivo {abr}-c{cargo}-e{ele}-e.json de 2026, esquema detectado em runtime:
+    "carg" -> estilo -u (uma leitura da propria abrangencia); "cand" no topo -> flat
+    estilo -r; lista "abr" -> uma leitura por entrada (uf dentro de br, municipio
+    dentro de uf). Municipio dentro do arquivo br e descartado (vem sem a uf certa;
+    os arquivos por UF e o -u cobrem)."""
+    if j.get("carg") is not None:
+        ler = parse_u(j, abr)
+        cd = str(j.get("cdabr", ""))
+        if not cd.isdigit():
+            ler.update({"nivel": j.get("tpabr", "uf"), "uf": cd, "cd_mun": None})
+        ler["cargo"] = ler["cargo"] or cargo
+        return [ler]
+    if j.get("cand") is not None:
+        return [parse_r(j, cargo)]
+    uf_pai = str(j.get("cdabr", ""))
+    out = []
+    for m in j.get("abr", []):
+        cd = str(m.get("cdabr", ""))
+        eh_mun = cd.isdigit()
+        if eh_mun and uf_pai == "br":
+            continue
+        s, e, v = m.get("s") or {}, m.get("e") or {}, m.get("v") or {}
+        tem_s = bool(s)
+        out.append({"nivel": "mu" if eh_mun else "uf", "uf": uf_pai if eh_mun else cd,
+                    "cd_mun": _i(cd) if eh_mun else None, "ele": _i(j.get("ele")), "cargo": cargo,
+                    "ts": _i(s.get("ts")) if tem_s else None, "st": _i(s.get("st")) if tem_s else None,
+                    "e": _i(e.get("te")) if e else None, "ea": _i(e.get("est")) if e else None,
+                    "c": _i(e.get("c")) if e else None,
+                    "vb": _i(v.get("vb")) if v else None,
+                    "vn": _i(v.get("tvn", v.get("vn"))) if v else None,
+                    "vv": _i(v.get("vv")) if v else None,
+                    "cand": {c["n"]: _i(c.get("vap")) for c in m.get("cand", [])}, "leg": {},
+                    "dt": m.get("dt", ""), "ht": m.get("ht", "")})
+    return out
+
+
+def parse_ab(j: dict) -> dict:
+    """br-e{ele}-ab.json -> {cdabr: {ts, st, e, ea, c, dt, ht}} (so entradas nao municipais)."""
+    out = {}
+    for m in j.get("abr", []):
+        cd = str(m.get("cdabr", ""))
+        if cd.isdigit():
+            continue
+        s, e = m.get("s") or {}, m.get("e") or {}
+        out[cd] = {"ts": _i(s.get("ts")), "st": _i(s.get("st")), "e": _i(e.get("te")),
+                   "ea": _i(e.get("est")), "c": _i(e.get("c")),
+                   "dt": m.get("dt", ""), "ht": m.get("ht", "")}
+    return out
 
 
 def parse_u(j: dict, uf: str) -> dict:
@@ -229,7 +293,10 @@ class Coletor:
 
     def _busca(self, urls: list[str]) -> list[tuple[str, int, object]]:
         def um(u):
-            st, j = get_json(u, timeout=15, tentativas=2)
+            try:
+                st, j = get_json(u, timeout=15, tentativas=2)
+            except Exception:       # inclui MemoryError: uma url perdida nao derruba a noite
+                return u, 0, None
             return u, st, j
         with ThreadPoolExecutor(THREADS) as ex:
             res = list(ex.map(um, urls))
@@ -252,35 +319,49 @@ class Coletor:
             bruto.mkdir(parents=True, exist_ok=True)
         t0, r0 = time.time(), self.stats["req"]
 
-        # 1. -r: BR (presidente) e UFs
+        # 1. resultado por abrangencia: BR (presidente) e UFs
+        #    (2026: {abr}-c{cargo}-e{ele}-e.json; a arvore dados-simplificados/-r sumiu)
         urls = []
         for cg in self.cargos:
             ele = eleicao_do_cargo(self.cfg, self.turno, cg)
             abrs = (["br"] if cg == "0001" else []) + UFS
             if cg == "0008":
                 abrs = ["df"]
-            urls += [(cg, url_r(amb, ciclo, ele, a, cg)) for a in abrs]
-        for (cg, _), (u, st, j) in zip(urls, self._busca([u for _, u in urls])):
-            if st == 200 and j:
-                self._guarda(parse_r(j, cg), bruto, u.rsplit("/", 1)[1], j)
+            urls += [(cg, a, url_e(amb, ciclo, ele, a, cg)) for a in abrs]
+        for (cg, a, _), (u, st, j) in zip(urls, self._busca([u for _, _, u in urls])):
+            if st != 200 or not j:
+                continue
+            for ler in parse_feed_abr(j, cg, a):
+                k = (ler["cargo"], ler["nivel"], ler["uf"], ler["cd_mun"])
+                if ler["nivel"] == "mu" and ler.get("st") is None and \
+                        k in self.atual and self.atual[k].get("st") is not None:
+                    continue              # -u ja tem o municipio com contagem de secoes
+                self.atual[k] = ler
+            if bruto is not None:
+                (bruto / (u.rsplit("/", 1)[1] + ".gz")).write_bytes(gzip.compress(json.dumps(j).encode()))
 
-        # 2. -e (se existir) por UF, redetectado a cada 10 ciclos
+        # 1b. -ab (novo em 2026): st/ts, eleitorado e comparecimento por UF, por eleicao
+        eles: dict[str, list[str]] = {}
         for cg in self.cargos:
-            ele = eleicao_do_cargo(self.cfg, self.turno, cg)
-            if cg not in self.modo_e or self.n_ciclo % 10 == 0:
-                st, _ = get(url_e(amb, ciclo, ele, "ac", cg), tentativas=1)
-                self.modo_e[cg] = st == 200
-            if self.modo_e[cg] and cg in ("0006", "0007", "0003", "0005"):
-                us = [url_e(amb, ciclo, ele, uf, cg) for uf in UFS]
-                for u, st, j in self._busca(us):
-                    if st == 200 and j:
-                        for ler in parse_e(j, cg):
-                            k = (cg, "mu", ler["uf"], ler["cd_mun"])
-                            if k in self.atual and self.atual[k].get("st") is not None:
-                                continue          # -u ja tem o municipio com contagem de secoes
-                            self.atual[k] = ler
-                        if bruto is not None:
-                            (bruto / (u.rsplit("/", 1)[1] + ".gz")).write_bytes(gzip.compress(json.dumps(j).encode()))
+            eles.setdefault(eleicao_do_cargo(self.cfg, self.turno, cg), []).append(cg)
+        for ele, (u, st, j) in zip(eles, self._busca([url_ab(amb, ciclo, e, "br") for e in eles])):
+            if st != 200 or not j:
+                continue
+            for cd, ab in parse_ab(j).items():
+                nivel = "br" if cd == "br" else "uf"
+                for cg in eles[ele]:
+                    k = (cg, nivel, cd, None)
+                    ler = self.atual.get(k)
+                    if ler is None:
+                        ler = {"nivel": nivel, "uf": cd, "cd_mun": None, "ele": _i(ele),
+                               "cargo": cg, "cand": {}, "leg": {}, "vb": None, "vn": None,
+                               "vv": None, "dt": "", "ht": ""}
+                        self.atual[k] = ler
+                    ler.update({c: ab[c] for c in ("ts", "st", "e", "ea", "c")})
+            if bruto is not None:
+                (bruto / (u.rsplit("/", 1)[1] + ".gz")).write_bytes(gzip.compress(json.dumps(j).encode()))
+
+        # (o antigo passo 2, -e por UF, virou o proprio passo 1)
 
         # 3. -u por municipio, com orcamento e prioridade (aberto, grande, velho)
         for cg, orc in ORCAMENTO_U.items():
