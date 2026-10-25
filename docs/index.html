@@ -66,18 +66,18 @@
   </div>
   <div class="nota">Needle A ancora cada urna no <b>1º turno de 2026</b> (terceiros divididos na proporção local; o modelo aprende a transferência real conforme as urnas chegam).
     Needle B ancora no <b>2º turno de 2022 andado pela demografia</b> (âncora do projeto apuracao-2026, reconstruída do repositório: 8 covariáveis de perfil, ordem de chegada de 04/10/2026).
-    Nos dois, σ é <b>assumido</b> (curva do METODO.md; A com fator 1,5), não calibrado. P(vitória) = Φ(|margem|/σ).</div>
+    σ do needle B foi <b>medido no replay do 1º turno de 2026</b> (ordem real de chegada de 04/10, só feed municipal: erro de 1,7 pt com 1% apurado, 0,9 com 3%, ≤0,4 de 5% em diante, × 1,25, piso 0,5); o needle A usa o mesmo × 1,5. Uma noite só — não é a calibração do projeto original. P(vitória) = Φ(|margem|/σ).</div>
 
   <h2>Evolução no tempo</h2>
   <div class="charts">
     <div class="chart"><h4>P(Lula vence)</h4><div class="leg"><i style="border-color:var(--a)"></i>A: vs 1º turno<i style="border-color:var(--b)"></i>B: vs 2022+demografia</div><div id="g1"></div></div>
     <div class="chart"><h4>% final projetado — Lula (válidos)</h4><div class="leg"><i style="border-color:var(--a)"></i>A<i style="border-color:var(--b)"></i>B<i style="border-color:var(--tela)" class="tr"></i>tela crua (apurado)</div><div id="g2"></div></div>
     <div class="chart"><h4>% final projetado — Lula × % apurado</h4><div class="leg"><i style="border-color:var(--a)"></i>A<i style="border-color:var(--b)"></i>B<i style="border-color:var(--tela)" class="tr"></i>tela crua</div><div id="g3"></div></div>
-    <div class="chart"><h4>Comparecimento apurado × esperado</h4><div class="leg"><i style="border-color:#1e8449"></i>apurado (seções totalizadas)<i style="border-color:var(--a)" class="tr"></i>1º turno 2026<i style="border-color:var(--b)" class="tr"></i>2º turno 2022</div><div id="g4"></div></div>
+    <div class="chart"><h4>Comparecimento apurado × esperado</h4><div class="leg"><i style="border-color:#1e8449"></i>apurado (seções totalizadas)<i style="border-color:var(--a)" class="tr"></i>1º turno 2026 (final)<i style="border-color:var(--b)" class="tr"></i>2º turno 2022 (final)</div><div id="g4"></div></div>
   </div>
 
   <h2>Abstenção: apurada × esperada <span class="sub" id="abstBr"></span></h2>
-  <div class="sub">Abstenção das seções já totalizadas em cada lugar, comparada à abstenção do 1º turno de 2026 e do 2º turno de 2022 <i>nos mesmos lugares</i>. "Efeito" é o quanto cada needle já moveu o comparecimento projetado daquele lugar (pontos), aprendido das urnas que chegaram — positivo = mais comparecimento que a âncora.</div>
+  <div class="sub">Abstenção das seções já totalizadas em cada lugar, comparada à abstenção do 1º turno de 2026 e do 2º turno de 2022 <i>nos mesmos municípios</i> (ponderados pelo eleitorado já apurado — corta o viés de composição; sobra o viés de ordem dentro de cada cidade). "Efeito" é o quanto cada needle já moveu o comparecimento projetado daquele lugar (pontos), aprendido das urnas que chegaram — positivo = mais comparecimento que a âncora.</div>
   <div class="ctl"><label><input type="checkbox" id="soApur" checked> só com apuração</label></div>
   <div class="scroll"><table class="t" id="tAbstUf"></table></div>
   <h3 style="font-size:14px;margin:14px 0 6px">Municípios-sentinela (Sul, Salvador, maiores cidades)</h3>
@@ -103,7 +103,7 @@
   const $ = id => document.getElementById(id);
   const f1 = x => x == null || isNaN(x) ? '—' : (+x).toFixed(1).replace('.', ',');
   const f2 = x => x == null || isNaN(x) ? '—' : (+x).toFixed(2).replace('.', ',');
-  const fp = x => x == null || isNaN(x) ? '—' : Math.round(100 * x) + '%';
+  const fp = x => x == null || isNaN(x) ? '—' : (x > 0.995 ? '>99%' : (x < 0.005 ? '<1%' : Math.round(100 * x) + '%'));
   const fs = x => x == null || isNaN(x) ? '—' : (x > 0 ? '+' : '') + (+x).toFixed(1).replace('.', ',');
   const fn = x => x == null ? '—' : Math.round(x).toLocaleString('pt-BR');
   const cls = x => x == null ? '' : (x > 0 ? 'pos' : (x < 0 ? 'neg' : ''));
@@ -150,7 +150,7 @@
         <tr><td class="dirc">${n.dir}</td><td>${f1(ancD)}%</td><td>${f2(pr.sh_dir)}%</td><td>50%+1</td><td class="${cls(-faltaD)}"><b>${fs(faltaD)} pt</b></td></tr>
       </table>
       <div class="nota">Swing observado em log-odds: ${f2(pr.delta_equiv)} (alvo ${n.esq} ${f2(pr.delta_alvo_esq)}, ${n.dir} ${f2(-pr.delta_alvo_dir)}) ·
-        σ ${s.sigma_calibrado ? 'calibrado' : 'assumido'}${s.sigma_fator && s.sigma_fator !== 1 ? ' ×' + s.sigma_fator : ''}</div></div>`;
+        σ ${s.sigma_fonte || (s.sigma_calibrado ? 'calibrado' : 'assumido')}</div></div>`;
   }
 
   // ---- gráficos SVG
@@ -209,8 +209,8 @@
     const ab = D.abst && D.abst.br;
     chart($('g4'), [
       { cor: '#1e8449', pts: h.map(p => [tms(p), p.comp_apurado]) },
-      { cor: '#d35400', tracejado: true, pts: ab ? h.map(p => [tms(p), 100 - ab.abst_t1]) : [] },
-      { cor: '#7d3c98', tracejado: true, pts: ab ? h.map(p => [tms(p), 100 - ab.abst_t2_2022]) : [] },
+      { cor: '#d35400', tracejado: true, pts: ab ? h.map(p => [tms(p), 100 - (ab.abst_t1_final ?? ab.abst_t1)]) : [] },
+      { cor: '#7d3c98', tracejado: true, pts: ab ? h.map(p => [tms(p), 100 - (ab.abst_t2_2022_final ?? ab.abst_t2_2022)]) : [] },
     ], { ...xo, yfmt: v => f1(v) + '%' });
   }
 
@@ -237,7 +237,7 @@
     const so = $('soApur').checked;
     const colsUf = [
       { k: 'uf', t: 'UF' }, { k: 'pct', t: '% apurado', f: f1 }, { k: 'abst_apurada', t: 'abst. apurada', f: v => v == null ? '—' : f1(v) + '%' },
-      { k: 'abst_t1', t: '1º turno 2026', f: v => f1(v) + '%' }, { k: 'abst_t2_2022', t: '2022 (2T)', f: v => f1(v) + '%' },
+      { k: 'abst_t1', t: '1º turno 2026 (mesmos lugares)', f: v => f1(v) + '%' }, { k: 'abst_t2_2022', t: '2022 (mesmos lugares)', f: v => f1(v) + '%' },
       { k: 'delta_t1', t: 'Δ vs 1º turno', f: v => v == null ? '—' : fs(v) + ' pt', cls }, { k: 'ef_A', t: 'efeito A', f: v => v == null ? '—' : fs(v), cls }, { k: 'ef_B', t: 'efeito B', f: v => v == null ? '—' : fs(v), cls },
     ];
     tabela($('tAbstUf'), colsUf, a.ufs.filter(r => !so || r.abst_apurada != null), 'delta_t1');
@@ -320,6 +320,7 @@
 
   const ufs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
   $('selUf').innerHTML += ufs.map(u => `<option>${u}</option>`).join('');
+  { const q = new URLSearchParams(location.search); if (q.get('n')) $('selN').value = q.get('n'); if (q.get('uf')) $('selUf').value = q.get('uf').toUpperCase(); if (q.get('mun')) $('selMun').value = q.get('mun'); }
   $('selN').onchange = $('selUf').onchange = alvos;
   $('selMun').oninput = () => { clearTimeout(window._tm); window._tm = setTimeout(alvos, 250); };
   $('soApur').onchange = abstencao;

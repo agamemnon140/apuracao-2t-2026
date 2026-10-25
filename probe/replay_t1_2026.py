@@ -70,7 +70,7 @@ def main() -> int:
 
     df = pd.DataFrame(linhas)
     # sigma por estagio: |erro| x 1,25 com piso 0,5; monotono nao crescente a partir do pior anterior
-    sig = (df["erro"].abs() * 1.25).clip(lower=0.5).to_numpy()
+    sig = np.array((df["erro"].abs() * 1.25).clip(lower=0.5).to_numpy(), dtype=float, copy=True)
     for i in range(len(sig) - 2, -1, -1):
         sig[i] = max(sig[i], sig[i + 1])
     pct = [0.0] + df["pct"].tolist() + [100.0]

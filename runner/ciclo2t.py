@@ -267,19 +267,36 @@ class Abstencao:
         mu = [l for l in leituras if l.get("nivel") == "mu" and l.get("ea")]
         por_uf: dict[str, dict] = {}
         por_mun: dict[int, dict] = {}
+        zero = {"ea": 0, "c": 0, "st": 0, "ts": 0, "e1": 0.0, "ea1": 0, "e2": 0.0, "ea2": 0}
+        br = dict(zero)
         for l in mu:
             uf = l["uf"].upper()
-            a = por_uf.setdefault(uf, {"ea": 0, "c": 0, "st": 0, "ts": 0})
-            a["ea"] += l["ea"] or 0; a["c"] += l["c"] or 0; a["st"] += l["st"] or 0; a["ts"] += l["ts"] or 0
+            a = por_uf.setdefault(uf, dict(zero))
+            bm = self.base["mun"].get(str(int(l["cd_mun"])), {})
+            for acc in (a, br):
+                acc["ea"] += l["ea"] or 0; acc["c"] += l["c"] or 0; acc["st"] += l["st"] or 0; acc["ts"] += l["ts"] or 0
+                # esperado nos MESMOS municipios, ponderado pelo eleitorado ja apurado
+                if bm.get("abst_t1") is not None:
+                    acc["e1"] += (l["ea"] or 0) * bm["abst_t1"] / 100; acc["ea1"] += l["ea"] or 0
+                if bm.get("abst_t2_2022") is not None:
+                    acc["e2"] += (l["ea"] or 0) * bm["abst_t2_2022"] / 100; acc["ea2"] += l["ea"] or 0
             por_mun[int(l["cd_mun"])] = l
+
+        def esperado(a: dict, b: dict) -> tuple:
+            t1 = round(100 * a["e1"] / a["ea1"], 2) if a and a["ea1"] else b.get("abst_t1")
+            t2 = round(100 * a["e2"] / a["ea2"], 2) if a and a["ea2"] else b.get("abst_t2_2022")
+            return t1, t2
+
+        pct_uf = {u: s["pct_secoes"] for u, s in rs["B"]["uf"].items()}
         ufs = []
         for uf in UFS:
             b = self.base["uf"].get(uf, {})
             a = por_uf.get(uf)
             ap = round(100 * (1 - a["c"] / a["ea"]), 2) if a and a["ea"] else None
-            ufs.append({"uf": uf, "pct": round(100 * a["st"] / a["ts"], 1) if a and a["ts"] else 0.0,
-                        "abst_apurada": ap, "abst_t1": b.get("abst_t1"), "abst_t2_2022": b.get("abst_t2_2022"),
-                        "delta_t1": None if ap is None or b.get("abst_t1") is None else round(ap - b["abst_t1"], 2),
+            t1, t2 = esperado(a, b)
+            ufs.append({"uf": uf, "pct": round(pct_uf.get(uf, 0.0), 1),
+                        "abst_apurada": ap, "abst_t1": t1, "abst_t2_2022": t2, "abst_t1_uf": b.get("abst_t1"),
+                        "delta_t1": None if ap is None or t1 is None else round(ap - t1, 2),
                         "ef_A": self.efeito(self.ctxs["A"], rs["A"], uf),
                         "ef_B": self.efeito(self.ctxs["B"], rs["B"], uf)})
 
@@ -307,10 +324,12 @@ class Abstencao:
                 continue
             cand.append((abs(100 * (1 - l["c"] / l["ea"]) - b["abst_t1"]), cd))
         desvios = [x for x in (linha_mun(cd) for _, cd in sorted(cand, reverse=True)[:15]) if x]
-        tot_ea = sum(a["ea"] for a in por_uf.values()); tot_c = sum(a["c"] for a in por_uf.values())
+        tot_ea, tot_c = br["ea"], br["c"]
+        br_t1, br_t2 = esperado(br, {"abst_t1": round(self.br_t1, 2), "abst_t2_2022": round(self.br_t2_2022, 2)})
         return {"instante": instante.strftime("%H:%M:%S"),
                 "br": {"abst_apurada": round(100 * (1 - tot_c / tot_ea), 2) if tot_ea else None,
-                       "abst_t1": round(self.br_t1, 2), "abst_t2_2022": round(self.br_t2_2022, 2),
+                       "abst_t1": br_t1, "abst_t2_2022": br_t2,
+                       "abst_t1_final": round(self.br_t1, 2), "abst_t2_2022_final": round(self.br_t2_2022, 2),
                        "ea": tot_ea, "c": tot_c},
                 "ufs": ufs, "sentinelas": sentinelas, "desvios": desvios}
 
@@ -386,7 +405,9 @@ def main() -> int:
                 s = monta_saida(ctx, rs[k], instante)
                 s["modo"] = "simula" if a.modo == "simula" else "ao-vivo"
                 s.update({"needle": k, "rotulo": ctx.rotulo, "sigma_fator": ctx.sigma_fator,
-                          "sigma_calibrado": False, "ancora_br": ctx.alvo["br"]})
+                          "sigma_calibrado": False, "ancora_br": ctx.alvo["br"],
+                          "sigma_fonte": ("medido no replay de 04/10/2026 (feed municipal, 1 noite)" if k == "B"
+                                          else f"o do needle B x {ctx.sigma_fator:g}")})
                 saidas[k] = s
                 escreve_needle(ctx, rs[k], s)
             leituras = fonte.leituras()
