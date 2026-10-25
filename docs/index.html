@@ -87,12 +87,15 @@
 
   <h2>Alvo × apurado por estado e cidade</h2>
   <div class="ctl">
+    <label>Buscar cidade <input id="busca" list="listaTodas" placeholder="qualquer cidade do país" style="width:250px"><datalist id="listaTodas"></datalist></label>
     <label>Needle <select id="selN"><option value="A">A — vs 1º turno 2026</option><option value="B">B — vs 2022 + demografia</option></select></label>
     <label>UF <select id="selUf"><option value="">Brasil (por UF)</option></select></label>
     <label>Município <input id="selMun" list="listaMun" placeholder="digite o nome" style="width:220px"><datalist id="listaMun"></datalist></label>
     <span class="sub" id="infoSel"></span>
   </div>
-  <div class="sub">Alvo = o que cada candidato precisa <i>naquele lugar</i> para fechar 50%+1 no país (ganho relativo igual em toda urna). "Falta" = alvo − projetado, em pontos dos válidos; negativo = já passou do alvo ali.</div>
+  <div class="sub">Alvo = o que cada candidato precisa <i>naquele lugar</i> para fechar 50%+1 no país (ganho relativo igual em toda urna). "Falta" = alvo − projetado, em pontos dos válidos; negativo = já passou do alvo ali.
+    <b>Âncora do apurado</b> = como as seções que o modelo acha que já entraram votaram na referência do needle (A: Lula a dois no 1º turno de 2026; B: 2022 andado pela demografia), estimadas pela ordem de chegada de 04/10 e pelos boletins lidos; <b>viés</b> = essa âncora menos a da cidade inteira (positivo = as seções já contadas são mais Lula que a cidade).</div>
+  <div id="detMun" class="card" style="margin:8px 0" hidden></div>
   <div class="scroll" style="max-height:560px"><table class="t" id="tAlvo"></table></div>
 
   <div class="nota" id="rodape">Dados: feed de resultados do TSE (totais por município) e boletins de urna raspados; 2022 e 1º turno de 2026 dos dados abertos do TSE. Código: github.com/agamemnon140/apuracao-2t-2026.</div>
@@ -109,7 +112,7 @@
   const cls = x => x == null ? '' : (x > 0 ? 'pos' : (x < 0 ? 'neg' : ''));
   const hhmm = ms => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 
-  const D = { A: null, B: null, hist: [], abst: null, nomes: {}, ufjson: {} };
+  const D = { A: null, B: null, hist: [], abst: null, nomes: {}, ufjson: {}, todas: null };
   const PASTA = { A: 'dados/live_t1', B: 'dados/live' };
 
   async function j(url) {
@@ -268,14 +271,21 @@
       { k: 'pr_e', t: n.esq + ' proj.', f: v => f1(v) + '%' }, { k: 'pr_d', t: n.dir + ' proj.', f: v => f1(v) + '%' },
       { k: 'al_e', t: 'alvo ' + n.esq, f: v => f1(v) + '%' }, { k: 'al_d', t: 'alvo ' + n.dir, f: v => f1(v) + '%' },
       { k: 'fa_e', t: 'falta ' + n.esq, f: v => v == null ? '—' : fs(v), cls: v => cls(-v) }, { k: 'fa_d', t: 'falta ' + n.dir, f: v => v == null ? '—' : fs(v), cls: v => cls(-v) },
+      { k: 'anc_mun', t: 'âncora lugar', f: v => v == null ? '—' : f1(v) + '%' }, { k: 'anc_cont', t: 'âncora apurado', f: v => v == null ? '—' : f1(v) + '%' },
+      { k: 'vies', t: 'viés', f: v => v == null ? '—' : fs(v), cls }, { k: 'n_bu', t: 'boletins', f: v => v == null ? '—' : fn(v) },
     ];
     let rows = [];
+    $('detMun').hidden = true;
     if (!uf) {
       for (const [u, v] of Object.entries(s.ufs)) {
-        const [pct, ape, apd, pre, prd, , , ale, ald] = v;
-        rows.push({ nome: u === 'ZZ' ? 'ZZ (exterior)' : u, aptos: null, pct, ap_e: ape, ap_d: apd, pr_e: pre, pr_d: prd, al_e: ale, al_d: ald, fa_e: ale == null ? null : ale - pre, fa_d: ald == null ? null : ald - prd });
+        const [pct, ape, apd, pre, prd, , , ale, ald, , nbu] = v;
+        const vu = (s.vies_uf || {})[u] || [null, null, null];
+        rows.push({ nome: u === 'ZZ' ? 'ZZ (exterior)' : u, aptos: null, pct, ap_e: ape, ap_d: apd, pr_e: pre, pr_d: prd, al_e: ale, al_d: ald, fa_e: ale == null ? null : ale - pre, fa_d: ald == null ? null : ald - prd,
+          anc_mun: vu[0], anc_cont: vu[1], vies: vu[0] == null || vu[1] == null ? null : vu[1] - vu[0], n_bu: nbu });
       }
-      $('infoSel').textContent = 'Brasil: projetado ' + f2(s.pr.sh_esq) + '% × ' + f2(s.pr.sh_dir) + '% — alvo 50%+1 para os dois';
+      const vb = s.vies_br || [null, null, null];
+      $('infoSel').textContent = 'Brasil: projetado ' + f2(s.pr.sh_esq) + '% × ' + f2(s.pr.sh_dir) + '% — alvo 50%+1 para os dois' +
+        (vb[1] == null ? '' : ' · âncora do já apurado ' + f1(vb[1]) + '% vs país ' + f1(vb[0]) + '% (viés ' + fs(vb[1] - vb[0]) + ' pt)');
       $('listaMun').innerHTML = '';
     } else {
       await carregaUf(k, uf);
@@ -288,15 +298,42 @@
           rows.push({ cd: r[c.cd_mun], nome: nomes[r[c.cd_mun]] || String(r[c.cd_mun]), aptos: r[c.aptos], pct: r[c.ts] ? 100 * r[c.st] / r[c.ts] : 0,
             ap_e: av ? 100 * r[c.apur_esq] / av : null, ap_d: av ? 100 * r[c.apur_dir] / av : null,
             pr_e: 100 * r[c.proj_esq] / pv, pr_d: 100 * r[c.proj_dir] / pv, al_e: r[c.alvo_esq], al_d: r[c.alvo_dir],
-            fa_e: r[c.alvo_esq] == null ? null : r[c.alvo_esq] - 100 * r[c.proj_esq] / pv, fa_d: r[c.alvo_dir] == null ? null : r[c.alvo_dir] - 100 * r[c.proj_dir] / pv });
+            fa_e: r[c.alvo_esq] == null ? null : r[c.alvo_esq] - 100 * r[c.proj_esq] / pv, fa_d: r[c.alvo_dir] == null ? null : r[c.alvo_dir] - 100 * r[c.proj_dir] / pv,
+            anc_mun: r[c.anc_mun], anc_cont: r[c.anc_cont], anc_bu: r[c.anc_bu], n_bu: r[c.n_bu],
+            vies: r[c.anc_mun] == null || r[c.anc_cont] == null ? null : r[c.anc_cont] - r[c.anc_mun] });
         }
       }
       const vU = s.ufs[uf];
       $('infoSel').textContent = vU ? uf + ': ' + f1(vU[0]) + '% apurado · projetado ' + f2(vU[3]) + '% × ' + f2(vU[4]) + '% · alvo ' + f1(vU[7]) + '% × ' + f1(vU[8]) + '%' : '';
       const q = $('selMun').value.trim().toLowerCase();
-      if (q) { const hit = rows.filter(r => r.nome.toLowerCase() === q); if (hit.length) rows = hit.concat(rows.filter(r => r.nome.toLowerCase() !== q)); else rows = rows.filter(r => r.nome.toLowerCase().includes(q)); }
+      if (q) {
+        const hit = rows.filter(r => r.nome.toLowerCase() === q);
+        if (hit.length) { rows = hit.concat(rows.filter(r => r.nome.toLowerCase() !== q)); detalhe(hit[0], uf, k, s); }
+        else rows = rows.filter(r => r.nome.toLowerCase().includes(q));
+      }
     }
     tabela(el, cols, rows, uf ? 'aptos' : 'fa_e');
+  }
+
+  function detalhe(r, uf, k, s) {
+    const n = s.nomes, el = $('detMun');
+    const ref = k === 'A' ? 'Lula a dois no 1º turno de 2026' : '2022 andado pela demografia (Lula a dois)';
+    const vies = r.vies, vbu = r.anc_bu == null || r.anc_mun == null ? null : r.anc_bu - r.anc_mun;
+    el.hidden = false;
+    el.innerHTML = `<h3>${r.nome} <span>${uf} · ${fn(r.aptos)} aptos · needle ${k}</span></h3>
+      <div class="kv">
+        <div>Apurado: <b>${f1(r.pct)}%</b> das seções · ${fn(r.n_bu)} boletins lidos</div>
+        <div>Tela: <b class="esqc">${r.ap_e == null ? '—' : f1(r.ap_e) + '%'}</b> × <b class="dirc">${r.ap_d == null ? '—' : f1(r.ap_d) + '%'}</b></div>
+        <div>Projetado: <b class="esqc">${f1(r.pr_e)}%</b> × <b class="dirc">${f1(r.pr_d)}%</b></div>
+        <div>Alvo: ${f1(r.al_e)}% × ${f1(r.al_d)}% · falta <span class="${cls(-r.fa_e)}">${fs(r.fa_e)}</span> / <span class="${cls(-r.fa_d)}">${fs(r.fa_d)}</span> pt</div>
+      </div>
+      <div class="alvo"><table>
+        <tr><th>que seções já entraram? (referência: ${ref})</th><th>âncora</th><th>vs cidade</th></tr>
+        <tr><td>cidade inteira</td><td>${f1(r.anc_mun)}%</td><td>—</td></tr>
+        <tr><td>seções que o modelo estima já apuradas (boletins + ordem de 04/10)</td><td>${r.anc_cont == null ? '—' : f1(r.anc_cont) + '%'}</td><td class="${cls(vies)}">${vies == null ? '—' : fs(vies) + ' pt'}</td></tr>
+        <tr><td>só as urnas com boletim lido (${fn(r.n_bu)})</td><td>${r.anc_bu == null ? '—' : f1(r.anc_bu) + '%'}</td><td class="${cls(vbu)}">${vbu == null ? '—' : fs(vbu) + ' pt'}</td></tr>
+      </table>
+      <div class="nota">Viés positivo: o que já entrou é mais Lula que a cidade — a tela desta cidade tende a cair para ele conforme o resto chega; o needle já desconta isso ao projetar.</div></div>`;
   }
 
   function render() {
@@ -315,6 +352,12 @@
       try { D[k] = await j(url); } catch (e) { erros.push(k); }
     }
     if (erros.length) $('rodape').innerHTML += ` <span class="erro">(sem resposta: ${erros.join(', ')})</span>`;
+    if (!D.todas) {
+      try {
+        D.todas = await j('dados/municipios.json');
+        $('listaTodas').innerHTML = D.todas.map(m => `<option value="${m[2]} (${m[1]})">`).join('');
+      } catch (e) { D.todas = []; }
+    }
     render();
   }
 
@@ -322,6 +365,12 @@
   $('selUf').innerHTML += ufs.map(u => `<option>${u}</option>`).join('') + '<option value="ZZ">ZZ (exterior)</option>';
   { const q = new URLSearchParams(location.search); if (q.get('n')) $('selN').value = q.get('n'); if (q.get('uf')) $('selUf').value = q.get('uf').toUpperCase(); if (q.get('mun')) $('selMun').value = q.get('mun'); }
   $('selN').onchange = $('selUf').onchange = alvos;
+  $('busca').onchange = () => {
+    const m = /^(.*) \(([A-Z]{2})\)$/.exec($('busca').value.trim());
+    if (!m) return;
+    $('selUf').value = m[2]; $('selMun').value = m[1]; alvos();
+    $('detMun').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   $('selMun').oninput = () => { clearTimeout(window._tm); window._tm = setTimeout(alvos, 250); };
   $('soApur').onchange = abstencao;
   window.addEventListener('resize', () => { clearTimeout(window._tr); window._tr = setTimeout(graficos, 200); });

@@ -273,7 +273,16 @@ class Needle:
         mun["st"] = np.where(tem_st, st, tot["n"])
         mun["ts"] = np.where(tem_st, ts, self.urnas_mun)
         mun["n_bu"] = tot["n"]
+        # que urnas o modelo acha que ja entraram: ancora (esq a dois) da cidade inteira, do que ele
+        # estima contado (boletins exatos + feed via p_contada) e so dos boletins lidos
+        e0, d0 = self.esp0["esq"], self.esp0["dois"]
+        pc_eff = np.where(crawl, 1.0, pc)
+        for suf, w in (("mun", None), ("cont", pc_eff), ("bu", crawl.astype(float))):
+            mun[f"_ae_{suf}"] = self._bc(e0 if w is None else e0 * w)
+            mun[f"_ad_{suf}"] = self._bc(d0 if w is None else d0 * w)
         dfm = pd.DataFrame(mun)
+        for suf in ("mun", "cont", "bu"):
+            dfm[f"anc_{suf}"] = np.where(dfm[f"_ad_{suf}"] > 0, dfm[f"_ae_{suf}"] / np.maximum(dfm[f"_ad_{suf}"], 1e-9), np.nan)
         dfm["uf"] = self.mun_uf
         dfm["cd_mun"] = self.mun_cd
 
@@ -287,6 +296,9 @@ class Needle:
             s["tela_margem"] = (100 * (s["apur_esq"] - s["apur_dir"]) / s["apur_val"]
                                 if s["apur_val"] > 0 else None)
             s["pct_secoes"] = 100 * s["st"] / max(s["ts"], 1.0)
+            for suf in ("mun", "cont", "bu"):
+                ad = float(g[f"_ad_{suf}"].sum())
+                s[f"anc_{suf}"] = float(g[f"_ae_{suf}"].sum() / ad) if ad > 0 else None
             return s
 
         br = resumo(dfm)

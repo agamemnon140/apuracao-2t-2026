@@ -182,7 +182,10 @@ def escreve_needle(ctx: Ctx, r: dict, saida: dict) -> None:
     m = r["mun"]
     am = ctx.alvo.get("mun", {})
     cols = ["cd_mun", "st", "ts", "n_bu", "apur_esq", "apur_dir", "apur_val", "proj_esq", "proj_dir",
-            "proj_val", "proj_comp", "alvo_esq", "ancora_esq", "alvo_dir", "aptos"]
+            "proj_val", "proj_comp", "alvo_esq", "ancora_esq", "alvo_dir", "aptos", "anc_mun", "anc_cont", "anc_bu"]
+
+    def pc(x):
+        return None if x is None or x != x else round(100 * float(x), 2)
     aptos_mun = np.bincount(ctx.nd.mun_cod, ctx.nd.aptos, minlength=ctx.nd.n_mun)
     for u, g in m.groupby("uf"):
         linhas = []
@@ -194,7 +197,8 @@ def escreve_needle(ctx: Ctx, r: dict, saida: dict) -> None:
                            round(100 * a["alvo_esq"], 2) if a else None,
                            round(100 * a["ancora_esq"], 2) if a else None,
                            round(100 * a["alvo_dir"], 2) if a else None,
-                           int(aptos_mun[ctx.nd.mun_idx[f"{u}:{int(row.cd_mun)}"]])])
+                           int(aptos_mun[ctx.nd.mun_idx[f"{u}:{int(row.cd_mun)}"]]),
+                           pc(row.anc_mun), pc(row.anc_cont), pc(row.anc_bu)])
         grava(d / "uf" / f"{u}.json", {"instante": saida["instante"], "cols": cols, "mun": linhas})
 
 
@@ -415,6 +419,10 @@ def main() -> int:
                 rs[k] = ctx.nd.estima(obs, feed, params)
                 s = monta_saida(ctx, rs[k], instante)
                 s["modo"] = "simula" if a.modo == "simula" else "ao-vivo"
+                s["vies_uf"] = {u: [None if v.get(c) is None else round(100 * v[c], 2) for c in ("anc_mun", "anc_cont", "anc_bu")]
+                                for u, v in rs[k]["uf"].items()}
+                b_ = rs[k]["br"]
+                s["vies_br"] = [None if b_.get(c) is None else round(100 * b_[c], 2) for c in ("anc_mun", "anc_cont", "anc_bu")]
                 s.update({"needle": k, "rotulo": ctx.rotulo, "sigma_fator": ctx.sigma_fator,
                           "sigma_calibrado": False, "ancora_br": ctx.alvo["br"],
                           "sigma_fonte": ctx.sigma_fonte})
