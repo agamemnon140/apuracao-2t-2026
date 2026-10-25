@@ -351,9 +351,11 @@
     const pa = D.par, g = $('selPar').value;
     if (!pa || !pa[g]) { $('parBr').textContent = ''; return; }
     const br = pa[g].br;
-    $('parBr').textContent = !br ? '— nenhum município nesse grupo ainda'
-      : `${fn(br.n)} municípios · ${fn(br.aptos)} aptos (${f1(100 * br.aptos / 158745502)}% do país) · Lula ${f2(br.sh)}% a dois vs ${f2(br.sh_t1)}% nas mesmas seções no 1º turno → swing ${fs(br.swing_t1)} pt` +
-        (br.swing_t22 == null ? '' : ` · vs 2022: ${fs(br.swing_t22)} pt`) + (br.d_abst == null ? '' : ` · abstenção ${fs(br.d_abst)} pt vs 1º turno`);
+    const sA = D.A && D.A.pr ? D.A.pr.dois_esq - D.A.pr.ancora_dois_esq : null, sB = D.B && D.B.pr ? D.B.pr.dois_esq - D.B.pr.ancora_dois_esq : null;
+    $('parBr').innerHTML = !br ? '— nenhum município nesse grupo ainda'
+      : `${fn(br.n)} municípios · ${fn(br.aptos)} aptos (${f1(100 * br.aptos / 158745502)}% do país) · Lula ${f2(br.sh)}% a dois vs ${f2(br.sh_t1)}% nas mesmas seções no 1º turno → <b>swing ${fs(br.swing_t1)} pt</b>` +
+        (br.swing_t22 == null ? '' : ` · vs 2022: ${fs(br.swing_t22)} pt`) + (br.d_abst == null ? '' : ` · abstenção ${fs(br.d_abst)} pt vs 1º turno`) +
+        (sA == null ? '' : `<br><span class="sub">Para comparar: o swing nacional que os needles estão supondo é <b>A ${fs(sA)} pt</b> (vs 1º turno) e <b>B ${fs(sB)} pt</b> (vs 2022+demografia). Se o pareado ficar bem abaixo do needle, o modelo pode estar atribuindo a swing o que é só ordem de chegada dentro das cidades (sem boletins, ele estima quais seções entraram).</span>`);
     const cols = [
       { k: 'uf', t: 'UF' }, { k: 'n', t: 'municípios', f: fn }, { k: 'aptos', t: 'aptos', f: fn }, { k: 'sh', t: 'Lula agora', f: v => f1(v) + '%' },
       { k: 'sh_t1', t: 'Lula 1º turno (mesmas seções)', f: v => f1(v) + '%' }, { k: 'swing_t1', t: 'swing vs 1º turno', f: v => fs(v) + ' pt', cls },
