@@ -107,8 +107,13 @@ class Ctx:
 class Feed2T:
     """Feed do TSE so para presidente (cargo 0001) + boletins raspados."""
 
-    def __init__(self, ctx: Ctx, sem_feed: bool = False):
+    def __init__(self, ctx: Ctx, sem_feed: bool = False, threads: int = 6, orcamento: int = 1200):
+        import runner.coletor as _col
         from runner.coletor import Coletor, descobre
+        # noite de 25/10: o Akamai do TSE tarpita o IP com 16 conexoes; 6 conexoes e ~1.200 -u por
+        # ciclo (os maiores/mais abertos primeiro) fecham um ciclo em ~2 min em vez de travar
+        _col.THREADS = threads
+        _col.ORCAMENTO_U["0001"] = orcamento
         self.ctx, self.sem_feed, self.col = ctx, sem_feed, None
         if sem_feed:
             return
@@ -394,6 +399,8 @@ def main() -> int:
     ap.add_argument("--sem-feed", action="store_true", help="ao vivo so com boletins")
     ap.add_argument("--bu-db", default=str(BU_DB))
     ap.add_argument("--novo-historico", action="store_true", help="zera live/historico.json")
+    ap.add_argument("--threads", type=int, default=6, help="conexoes simultaneas ao TSE")
+    ap.add_argument("--orcamento", type=int, default=1200, help="arquivos -u por ciclo (prioriza grandes e abertos)")
     a = ap.parse_args()
     BU_DB = Path(a.bu_db)
     import runner.ciclo as _c
@@ -408,7 +415,7 @@ def main() -> int:
     ctxs = {k: Ctx(k, cfg, a.turno) for k, cfg in NEEDLES.items()}
     assert ctxs["A"].nd.n == ctxs["B"].nd.n, "ancoras com numero de urnas diferente"
     logging.info("needles prontos: %d urnas, %.0f s", ctxs["A"].nd.n, time.time() - t0)
-    fonte = FeedSimulado(a.simula_frac) if a.modo == "simula" else Feed2T(ctxs["B"], a.sem_feed)
+    fonte = FeedSimulado(a.simula_frac) if a.modo == "simula" else Feed2T(ctxs["B"], a.sem_feed, a.threads, a.orcamento)
     abst = Abstencao(ctxs)
     pub = Publicador(a.publicar)
     params = Params()
