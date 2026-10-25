@@ -261,11 +261,11 @@
     const k = $('selN').value, uf = $('selUf').value, s = D[k];
     const el = $('tAlvo');
     if (!s || !s.pr) { el.innerHTML = ''; return; }
-    const n = s.nomes;
+    const n = { esq: s.nomes.esq.split(' ')[0], dir: s.nomes.dir.split(' ')[0] };
     const cols = [
-      { k: 'nome', t: 'lugar', f: v => `<span class="nome">${v}</span>` }, { k: 'aptos', t: 'aptos', f: fn }, { k: 'pct', t: '% apurado', f: f1 },
-      { k: 'ap_e', t: n.esq + ' apurado', f: v => v == null ? '—' : f1(v) + '%' }, { k: 'ap_d', t: n.dir + ' apurado', f: v => v == null ? '—' : f1(v) + '%' },
-      { k: 'pr_e', t: n.esq + ' projetado', f: v => f1(v) + '%' }, { k: 'pr_d', t: n.dir + ' projetado', f: v => f1(v) + '%' },
+      { k: 'nome', t: 'lugar', f: v => `<span class="nome">${v}</span>` }, { k: 'aptos', t: 'aptos', f: fn }, { k: 'pct', t: '% apur.', f: f1 },
+      { k: 'ap_e', t: n.esq + ' apur.', f: v => v == null ? '—' : f1(v) + '%' }, { k: 'ap_d', t: n.dir + ' apur.', f: v => v == null ? '—' : f1(v) + '%' },
+      { k: 'pr_e', t: n.esq + ' proj.', f: v => f1(v) + '%' }, { k: 'pr_d', t: n.dir + ' proj.', f: v => f1(v) + '%' },
       { k: 'al_e', t: 'alvo ' + n.esq, f: v => f1(v) + '%' }, { k: 'al_d', t: 'alvo ' + n.dir, f: v => f1(v) + '%' },
       { k: 'fa_e', t: 'falta ' + n.esq, f: v => v == null ? '—' : fs(v), cls: v => cls(-v) }, { k: 'fa_d', t: 'falta ' + n.dir, f: v => v == null ? '—' : fs(v), cls: v => cls(-v) },
     ];
