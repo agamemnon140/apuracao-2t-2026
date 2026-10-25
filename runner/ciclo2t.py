@@ -147,6 +147,11 @@ class FeedSimulado:
 
     def __init__(self, frac: float, seed: int = 7):
         rng = np.random.default_rng(seed)
+        # pr26t1 vem na ordem do RESULTADO real (meta.pr.r26.t1: 22 primeiro, 13 segundo)
+        meta = json.loads((DOCS / "meta.json").read_text("utf-8"))
+        ordem = [x[0] for x in meta["pr"]["r26"]["t1"]]
+        i13, i22, n26 = ordem.index("13"), ordem.index("22"), len(ordem)
+        outros = [i for i in range(n26) if i not in (i13, i22)]
         rows = []
         for uf in UFS:
             u = json.loads((DOCS / "uf" / f"{uf}.json").read_text("utf-8"))
@@ -154,9 +159,9 @@ class FeedSimulado:
                 p = m.get("pr26t1")
                 if not p or rng.random() > frac:
                     continue
-                rows.append({"uf": uf.lower(), "cd_mun": int(cd), "esq": p[0], "dir": p[1], "out": sum(p[2:13]),
-                             "bn": p[13] + p[14], "ea": m["aptos26"], "c": m["aptos26"] - p[15],
-                             "st": m["ns"], "ts": m["ns"]})
+                rows.append({"uf": uf.lower(), "cd_mun": int(cd), "esq": p[i13], "dir": p[i22],
+                             "out": sum(p[i] for i in outros), "bn": p[n26] + p[n26 + 1], "ea": m["aptos26"],
+                             "c": m["aptos26"] - p[n26 + 2], "st": m["ns"], "ts": m["ns"]})
         self.feed = pd.DataFrame(rows)
         self.t0 = time.time()
 
