@@ -1,1 +1,1 @@
-{"instante":"16:12:10","cols":["cd_mun","st","ts","n_bu","apur_esq","apur_dir","apur_val","proj_esq","proj_dir","proj_val","proj_comp","alvo_esq","ancora_esq","alvo_dir","aptos"],"mun":[[97012,0,6969,0,0,0,0,724281,1084268,1808549,1873930,40.91,40.05,59.09,2258320]]}
+{"instante":"16:31:27","cols":["cd_mun","st","ts","n_bu","apur_esq","apur_dir","apur_val","proj_esq","proj_dir","proj_val","proj_comp","alvo_esq","ancora_esq","alvo_dir","aptos","anc_mun","anc_cont","anc_bu"],"mun":[[97012,0,6969,0,0,0,0,724281,1084268,1808549,1873930,40.91,40.05,59.09,2258320,40.05,null,null]]}
