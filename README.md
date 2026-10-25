@@ -17,20 +17,32 @@ Painel de **abstenção**: seções totalizadas × 1º turno 2026 × 2022 nos me
 
 Construído em 25/10/2026 entre 15h e 17h, nesta máquina, sem os dados do projeto original
 (`D:\Claude\eleicoes-dados`): as âncoras foram **reconstruídas do próprio repo** por
-`sintetico/ancora_repo.py` (`docs/dados/sec/*.json`: `proj26`, `pr26t1`, `pf`), com 8 covariáveis
-de perfil no lugar das 25 do sintético e a ordem de chegada de 04/10/2026
-(`pipeline/carimbos.py 2026`). σ do needle B medido no replay do 1º turno de 2026
-(`probe/replay_t1_2026.py`, feed municipal, ordem real, uma noite só); needle A usa o mesmo com
-fator 1,5 — **não é a calibração do projeto original**.
+`sintetico/ancora_repo.py --cov` (`docs/dados/sec/*.json`: `proj26`, `pr26t1`, `pf`), com 27
+covariáveis (8 do perfil TSE de 2026 + 19 do sintético de 2022, casadas por seção em 92% das urnas)
+e a ordem de chegada de 04/10/2026 (`pipeline/carimbos.py 2026`).
+
+σ **medido em replays**, um por needle, feed municipal sem boletins, |erro| × 1,25 e piso de 0,5 pt:
+
+| apurado | B: erro (replay do 1º turno 2026, ordem real) | A: erro (replay análogo 2022: 1º→2º turno) | tela crua |
+|---|---|---|---|
+| 0,5% | +1,9 | +0,6 | −5 / −11 |
+| 1% | +1,4 | +0,1 | −5 / −9 |
+| 3% | +0,9 | −0,1 | −7 / −10 |
+| 5% | +0,3 | −0,2 | −8 / −10 |
+| 10–90% | ≤ ±0,3 | ≤ ±0,05 | −9 … −2 |
+
+(`probe/replay_t1_2026.py`, `probe/replay_t2_2022.py`; uma noite cada — **não é a calibração do
+projeto original**, que tinha boletins e a ordem de 2022.)
 
 ## Rodar
 
 ```sh
 set ELEICOES_DADOS=C:\Users\Henrique\Documents\eleicoes-dados-2t
-py -m sintetico.ancora_repo                                   # ancoras A e B + abst_base.json
+py -m sintetico.ancora_repo --cov                             # ancoras A e B (27 covariaveis) + abst_base.json
 py -m sintetico.alvo_2026 --turno 2                           # alvo B
 py -m sintetico.alvo_2026 --turno 2 --ancora ancora_t1_2026.parquet --sufixo t1_2026   # alvo A
-py -m probe.replay_t1_2026 --grava                            # sigma medido (replay de 04/10)
+py -m probe.replay_t1_2026 --grava                            # sigma do B (replay de 04/10/2026)
+py -m probe.replay_t2_2022 --grava                            # sigma do A (replay analogo de 2022)
 py -m runner.ciclo2t --modo simula --ciclos 2                 # ensaio sem rede
 py -m runner.coletor --descobre && py -m runner.coletor --malhas --t2
 py -m runner.bu_crawler --turno 2                             # janela 1: boletins por urna

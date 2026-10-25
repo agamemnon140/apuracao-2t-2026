@@ -68,6 +68,8 @@ def le_urnas(nomes: dict) -> pd.DataFrame:
     outros = [i for i in range(n26) if i not in (i13, i22)]
     ordem22 = [c[0] for c in meta["pr"]["2022"]["t2"]]
     assert ordem22[:2] == ["13", "22"], ordem22
+    ordem21 = [c[0] for c in meta["pr"]["2022"]["t1"]]
+    assert ordem21[:2] == ["13", "22"] and len(ordem21) == 11, ordem21
     rows = []
     dirs = sorted((d for d in (DD / "sec").iterdir() if d.name.isdigit()), key=lambda d: int(d.name))
     for d in dirs:
@@ -77,20 +79,24 @@ def le_urnas(nomes: dict) -> pd.DataFrame:
             z = int(f.stem)
             s = json.loads(f.read_text("utf-8"))
             c = s["cols"]
-            ip, c22, c26, ipf = c.index("proj26"), c.index("pr22t2"), c.index("pr26t1"), c.index("pf")
+            ip, c22, c26, ipf, c21 = (c.index("proj26"), c.index("pr22t2"), c.index("pr26t1"), c.index("pf"),
+                                      c.index("pr22t1"))
             for r in s["rows"]:
                 pj = r[ip] or [0, 0, 0, 0, 0]
                 p22 = r[c22] if r[c22] else [None] * 5
+                q = r[c21]
+                p21 = [q[0], q[1], sum(q[2:11]), q[11], q[12], q[13]] if q else [None] * 6
                 p26 = r[c26]
                 t1 = ([p26[i13], p26[i22], sum(p26[i] for i in outros), p26[n26], p26[n26 + 1], p26[n26 + 2]]
                       if p26 else [None] * 6)
                 pf = [None if x is None else float(x) for x in r[ipf]] if r[ipf] else [None] * 8
                 rows.append((uf, cd, z, int(r[0]), int(r[1]), int(r[2] or 0), int(r[3] or 1), r[4], int(r[5] or 0),
-                             *pj, *p22, *t1, *pf))
+                             *pj, *p22, *t1, *pf, *p21))
     cols = (["uf", "cd_mun", "zona", "secao", "nr_local", "aptos22", "n_agregadas", "nivel_ancora", "aptos",
              "b_esq", "b_dir", "b_out", "b_bn", "b_abst",
              "t22_esq", "t22_dir", "t22_br", "t22_nu", "t22_abst",
-             "t1_esq", "t1_dir", "t1_out", "t1_br", "t1_nu", "t1_abst"] + [f"pf_{k}" for k in PF])
+             "t1_esq", "t1_dir", "t1_out", "t1_br", "t1_nu", "t1_abst"] + [f"pf_{k}" for k in PF]
+            + ["t21_esq", "t21_dir", "t21_out", "t21_br", "t21_nu", "t21_abst"])
     df = pd.DataFrame(rows, columns=cols)
     for c in cols[8:]:
         df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
@@ -135,6 +141,38 @@ def monta(df: pd.DataFrame, pref: str) -> pd.DataFrame:
     return a
 
 
+B22 = Path("C:/Users/Henrique/Documents/eleicoes-2026/dados-secao/sintetico/base_2022.parquet")
+EXTRA = ["log_renda", "pct_branca", "pct_preta", "pct_rural", "log_pop_mun", "hierarquia_num", "em_rm",
+         "pct_evangelica", "pct_sem_religiao", "vab_agro", "vab_industria", "vab_adm",
+         "pct_ocup_agro", "pct_ocup_bens", "pct_ocup_comercio"]
+
+
+def covariaveis_2022(df: pd.DataFrame) -> pd.DataFrame:
+    """As covariaveis do sintetico que nao sao perfil (renda, raca, rural, porte, regiao, religiao,
+    atividade), lidas da base de 2022 que existe nesta maquina, casadas por secao (a maioria das urnas
+    de 2026 tem par) e herdadas local -> municipio -> UF nas demais. Padronizadas; NaN -> 0."""
+    b = pd.read_parquet(B22, columns=["uf", "cd_municipio_tse", "zona", "secao", "regiao"] + EXTRA)
+    b = b.rename(columns={"cd_municipio_tse": "cd_mun"})
+    for reg in ["N", "NE", "CO", "S"]:
+        b[f"reg_{reg}"] = (b["regiao"] == reg).astype(float)
+    cols = EXTRA + [f"reg_{r}" for r in ["N", "NE", "CO", "S"]]
+    for k in ["cd_mun", "zona", "secao"]:
+        b[k] = b[k].astype(int)
+    b["uf"] = b["uf"].str.upper()
+    m = df[CHAVE + ["nr_local", "aptos"]].merge(b[CHAVE + cols].drop_duplicates(CHAVE), on=CHAVE, how="left")
+    for c in cols:
+        m[c] = m[c].astype(float)
+    casadas = m[cols[0]].notna().mean()
+    nivel = cascata(m, cols, "aptos")
+    print(f"sintetico 2022: {100 * casadas:.1f}% das urnas casadas por secao; niveis: "
+          + ", ".join(f"{k} {v:,}" for k, v in pd.Series(nivel).value_counts().items()))
+    out = {}
+    for c in cols:
+        v = m[c]
+        out[f"x_{c}"] = ((v - v.mean()) / (v.std() or 1.0)).fillna(0.0).astype(np.float32)
+    return pd.DataFrame(out)
+
+
 def main() -> int:
     t0 = time.time()
     nomes, mun = le_municipios()
@@ -142,6 +180,10 @@ def main() -> int:
     print(f"urnas lidas: {len(df):,}  aptos 2026: {df['aptos'].sum():,.0f}  [{time.time() - t0:.0f}s]", flush=True)
     print(f"sem 1o turno 2026: {df['t1_esq'].isna().sum():,}  sem 2022 t2: {df['t22_esq'].isna().sum():,}  "
           f"sem perfil: {df['pf_fem'].isna().sum():,}")
+
+    # 2022 por urna (1o e 2o turno; replay analogo do needle A)
+    df[CHAVE + ["aptos22", "t21_esq", "t21_dir", "t21_out", "t21_br", "t21_nu", "t21_abst",
+                "t22_esq", "t22_dir", "t22_br", "t22_nu", "t22_abst"]].to_parquet(SAIDA / "votos_2022.parquet", index=False)
 
     # voto do 1o turno por urna (para o replay de 04/10 e para o painel)
     df[CHAVE + ["aptos", "t1_esq", "t1_dir", "t1_out", "t1_br", "t1_nu", "t1_abst"]].to_parquet(
@@ -153,6 +195,9 @@ def main() -> int:
         v = df[f"pf_{k}"]
         X[f"x_pf_{k}"] = ((v - v.mean()) / (v.std() or 1.0)).fillna(0.0).astype(np.float32)
     X = pd.DataFrame(X)
+    if "--cov" in sys.argv:
+        X = pd.concat([X, covariaveis_2022(df)], axis=1)
+        print(f"covariaveis: {X.shape[1]} (8 do perfil 2026 + {X.shape[1] - 8} do sintetico de 2022)")
 
     ordem = None
     car = BASELINE / "carimbos_presidente_2026_t1.parquet"

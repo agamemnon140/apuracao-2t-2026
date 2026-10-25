@@ -48,8 +48,11 @@ PUSH_MIN_SEG = 360
 BU_DB = LIVE_DIR / "bu.sqlite"
 
 NEEDLES = {
+    # A: se baseline/calib_presidente_t1.json existir (probe/replay_t2_2022.py), usa-o com fator 1;
+    #    senao, o sigma do B x 1,5
     "A": {"rotulo": "vs 1º turno 2026", "ancora": "ancora_t1_2026.parquet",
-          "alvo": "alvo_t1_2026_t2.json", "sigma_fator": 1.5, "pasta": "live_t1"},
+          "alvo": "alvo_t1_2026_t2.json", "sigma_fator": 1.5, "pasta": "live_t1",
+          "calib": "calib_presidente_t1.json"},
     "B": {"rotulo": "vs 2º turno 2022 + demografia", "ancora": "ancora_2026.parquet",
           "alvo": "alvo_2026_t2.json", "sigma_fator": 1.0, "pasta": "live"},
 }
@@ -73,9 +76,17 @@ class Ctx:
         self.modo, self.turno = "ao-vivo", turno
         anc = pd.read_parquet(SAIDA / cfg["ancora"])
         self.nd = Needle(anc, turno=turno)
-        self.calib = json.loads((BASELINE / "calib_presidente.json").read_text("utf-8"))
+        arq_calib = BASELINE / cfg.get("calib", "calib_presidente.json")
+        if arq_calib.exists():
+            self.calib = json.loads(arq_calib.read_text("utf-8"))
+            self.sigma_fator = 1.0
+            self.sigma_fonte = self.calib.get("rotulo") or self.calib.get("nota", "")[:60]
+        else:
+            self.calib = json.loads((BASELINE / "calib_presidente.json").read_text("utf-8"))
+            self.sigma_fator = float(cfg["sigma_fator"])
+            self.sigma_fonte = (self.calib.get("rotulo") or "calib_presidente") + (
+                f" × {self.sigma_fator:g}" if self.sigma_fator != 1 else "")
         self.alvo = json.loads((SAIDA / cfg["alvo"]).read_text("utf-8"))
-        self.sigma_fator = float(cfg["sigma_fator"])
         c = json.loads((RAIZ / "config" / "candidatos_2026.json").read_text("utf-8"))["presidente"]
         self.nomes = {"esq": c["cands"][c["esq"]]["nome"].title(), "dir": c["cands"][c["dir"]]["nome"].title(),
                       "nr_esq": c["esq"], "nr_dir": c["dir"]}
@@ -406,8 +417,7 @@ def main() -> int:
                 s["modo"] = "simula" if a.modo == "simula" else "ao-vivo"
                 s.update({"needle": k, "rotulo": ctx.rotulo, "sigma_fator": ctx.sigma_fator,
                           "sigma_calibrado": False, "ancora_br": ctx.alvo["br"],
-                          "sigma_fonte": ("medido no replay de 04/10/2026 (feed municipal, 1 noite)" if k == "B"
-                                          else f"o do needle B x {ctx.sigma_fator:g}")})
+                          "sigma_fonte": ctx.sigma_fonte})
                 saidas[k] = s
                 escreve_needle(ctx, rs[k], s)
             leituras = fonte.leituras()

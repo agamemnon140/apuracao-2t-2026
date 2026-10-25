@@ -1,0 +1,129 @@
+{
+ "nota": "sigma do needle A MEDIDO no replay analogo de 2022 (ancora = 1T 2022 por urna, verdade = 2T 2022, feed municipal na ordem de chegada de 04/10/2026 como proxy): |erro| x 1,25, piso 0,5, envoltoria.",
+ "medido_em": "2026-10-25T16:11:32",
+ "pct": [
+  0.0,
+  0.5,
+  1.0,
+  2.0,
+  3.0,
+  5.0,
+  10.0,
+  20.0,
+  30.0,
+  50.0,
+  70.0,
+  90.0,
+  100.0
+ ],
+ "sigma_br": [
+  6.0,
+  0.72,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.1
+ ],
+ "sigma_uf": [
+  18.0,
+  2.161,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  0.3
+ ],
+ "replay": [
+  {
+   "pct": 0.5,
+   "tela": -9.613,
+   "needle": 2.287,
+   "erro": 0.576,
+   "erro_tela": -11.324
+  },
+  {
+   "pct": 1.0,
+   "tela": -7.482,
+   "needle": 1.769,
+   "erro": 0.058,
+   "erro_tela": -9.193
+  },
+  {
+   "pct": 2.0,
+   "tela": -7.713,
+   "needle": 1.673,
+   "erro": -0.038,
+   "erro_tela": -9.424
+  },
+  {
+   "pct": 3.0,
+   "tela": -7.981,
+   "needle": 1.571,
+   "erro": -0.14,
+   "erro_tela": -9.692
+  },
+  {
+   "pct": 5.0,
+   "tela": -8.131,
+   "needle": 1.507,
+   "erro": -0.204,
+   "erro_tela": -9.842
+  },
+  {
+   "pct": 10.0,
+   "tela": -8.323,
+   "needle": 1.658,
+   "erro": -0.053,
+   "erro_tela": -10.034
+  },
+  {
+   "pct": 20.0,
+   "tela": -7.626,
+   "needle": 1.755,
+   "erro": 0.044,
+   "erro_tela": -9.337
+  },
+  {
+   "pct": 30.0,
+   "tela": -6.655,
+   "needle": 1.745,
+   "erro": 0.034,
+   "erro_tela": -8.366
+  },
+  {
+   "pct": 50.0,
+   "tela": -5.258,
+   "needle": 1.679,
+   "erro": -0.032,
+   "erro_tela": -6.969
+  },
+  {
+   "pct": 70.0,
+   "tela": -3.523,
+   "needle": 1.669,
+   "erro": -0.042,
+   "erro_tela": -5.234
+  },
+  {
+   "pct": 90.0,
+   "tela": -0.628,
+   "needle": 1.689,
+   "erro": -0.022,
+   "erro_tela": -2.339
+  }
+ ],
+ "rotulo": "medido no replay análogo de 2022 (1º→2º turno, feed municipal)"
+}
