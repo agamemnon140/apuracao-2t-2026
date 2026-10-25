@@ -107,6 +107,8 @@ class Ctx:
 class Feed2T:
     """Feed do TSE so para presidente (cargo 0001) + boletins raspados."""
 
+    tse: dict = {}
+
     def __init__(self, ctx: Ctx, sem_feed: bool = False, threads: int = 6, orcamento: int = 1200):
         import runner.coletor as _col
         from runner.coletor import Coletor, descobre
@@ -122,12 +124,40 @@ class Feed2T:
             raise SystemExit("config do 2o turno indisponivel: rode `runner.coletor --descobre`")
         self.col = Coletor(cfg, str(ctx.turno), cargos=("0001",))
 
+    def oficial(self) -> dict:
+        """Totais oficiais do TSE por abrangencia ({abr}-c0001-e{ele}-u.json): br, UFs e zz.
+        29 requisicoes; e o numero 'da tela do TSE', independente do orcamento municipal."""
+        from runner.coletor import BASE, UFS as UFS_MIN, eleicao_do_cargo, parse_u
+        cfg = self.col.cfg
+        ele = eleicao_do_cargo(cfg, str(self.ctx.turno), "0001")
+        abrs = ["br"] + UFS_MIN + ["zz"]
+        urls = [f"{BASE}/{cfg['ambiente']}/{cfg['ciclo']}/{ele}/dados/{a}/{a}-c0001-e{int(ele):06d}-u.json" for a in abrs]
+        out = {}
+        e_, d_ = self.ctx.nomes["nr_esq"], self.ctx.nomes["nr_dir"]
+        for a, (_, st, j) in zip(abrs, self.col._busca(urls)):
+            if st != 200 or not j:
+                continue
+            l = parse_u(j, a)
+            esq, dir_ = l["cand"].get(e_, 0), l["cand"].get(d_, 0)
+            val = l["vv"] or (esq + dir_)
+            out[a.upper()] = {"st": l["st"], "ts": l["ts"], "pct": round(100 * l["st"] / max(l["ts"], 1), 2),
+                              "esq": esq, "dir": dir_, "val": val, "bn": (l["vb"] or 0) + (l["vn"] or 0),
+                              "c": l["c"], "ea": l["ea"], "hora": l.get("ht", ""),
+                              "sh_esq": round(100 * esq / val, 2) if val else None,
+                              "sh_dir": round(100 * dir_ / val, 2) if val else None}
+        return out
+
     def le(self):
         e_, d_ = self.ctx.nomes["nr_esq"], self.ctx.nomes["nr_dir"]
         if self.sem_feed:
             return None, le_boletins(self.ctx.nd, e_, d_), pd.Timestamp.now()
         r = self.col.ciclo()
         logging.info("coleta: %s", r)
+        try:
+            self.tse = self.oficial()
+        except Exception as e:                                  # informativo; nao derruba o ciclo
+            logging.warning("oficial TSE indisponivel: %s", e)
+            self.tse = {}
         linhas = []
         for ler in self.col.atual.values():
             if ler["cargo"] != "0001" or ler["nivel"] != "mu" or ler.get("st") is None:
@@ -237,8 +267,10 @@ def escreve_compat(saida_b: dict, r_b: dict) -> None:
 
 def ponto_historico(saidas: dict, instante: pd.Timestamp, comp_apurado: float | None) -> dict:
     b = saidas["B"]
+    tb = (b.get("tse") or {}).get("br") or {}
     p = {"t": instante.strftime("%H:%M:%S"), "hora": instante.isoformat(timespec="seconds"),
          "pct": b["pct_secoes"], "tela": b["pr"]["tela_margem"], "n_bu": b["n_bu"],
+         "tse_pct": tb.get("pct"), "tse_esq": tb.get("sh_esq"),
          "comp_apurado": None if comp_apurado is None else round(100 * comp_apurado, 2)}
     for k, s in saidas.items():
         pr = s["pr"]
@@ -435,6 +467,8 @@ def main() -> int:
                                 for u, v in rs[k]["uf"].items()}
                 b_ = rs[k]["br"]
                 s["vies_br"] = [None if b_.get(c) is None else round(100 * b_[c], 2) for c in ("anc_mun", "anc_cont", "anc_bu")]
+                tse = getattr(fonte, "tse", {}) or {}
+                s["tse"] = {"br": tse.get("BR"), "uf": {u: v for u, v in tse.items() if u != "BR"}}
                 s.update({"needle": k, "rotulo": ctx.rotulo, "sigma_fator": ctx.sigma_fator,
                           "sigma_calibrado": False, "ancora_br": ctx.alvo["br"],
                           "sigma_fonte": ctx.sigma_fonte})
@@ -454,8 +488,10 @@ def main() -> int:
                              "P(%s)=%.3f  bu=%d", k, s["instante"], s["pct_secoes"], ctxs[k].nomes["esq"], pr["sh_esq"],
                              ctxs[k].nomes["dir"], pr["sh_dir"], pr["margem"], pr["tela_margem"], pr["sigma"],
                              pr["lider"], pr["p_lider"], s["n_bu"])
-            logging.info("abstencao apurada %s (1T %s, 2022 %s)  [%s, %.1fs]", ab["br"]["abst_apurada"],
-                         ab["br"]["abst_t1"], ab["br"]["abst_t2_2022"], st, time.time() - t0)
+            tb = (getattr(fonte, "tse", {}) or {}).get("BR") or {}
+            logging.info("abstencao apurada %s (1T %s, 2022 %s)  TSE oficial: %s%% secoes, %s x %s (%s)  [%s, %.1fs]",
+                         ab["br"]["abst_apurada"], ab["br"]["abst_t1"], ab["br"]["abst_t2_2022"],
+                         tb.get("pct"), tb.get("sh_esq"), tb.get("sh_dir"), tb.get("hora"), st, time.time() - t0)
             (LIVE_DIR / "estado_ciclo.json").write_text(json.dumps(
                 {"ciclo": n, "instante": saidas["B"]["instante"], "pct": saidas["B"]["pct_secoes"],
                  "margem_A": saidas["A"]["pr"]["margem"], "margem_B": saidas["B"]["pr"]["margem"],
