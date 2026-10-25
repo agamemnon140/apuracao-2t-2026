@@ -300,7 +300,7 @@ class Abstencao:
 
         pct_uf = {u: s["pct_secoes"] for u, s in rs["B"]["uf"].items()}
         ufs = []
-        for uf in UFS:
+        for uf in UFS + ["ZZ"]:
             b = self.base["uf"].get(uf, {})
             a = por_uf.get(uf)
             ap = round(100 * (1 - a["c"] / a["ea"]), 2) if a and a["ea"] else None

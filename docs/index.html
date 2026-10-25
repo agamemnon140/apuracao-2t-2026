@@ -236,7 +236,7 @@
       : 'Brasil: ' + f1(b.abst_apurada) + '% apurada × ' + f1(b.abst_t1) + '% no 1º turno × ' + f1(b.abst_t2_2022) + '% em 2022 (Δ 1º turno ' + fs(b.abst_apurada - b.abst_t1) + ' pt)';
     const so = $('soApur').checked;
     const colsUf = [
-      { k: 'uf', t: 'UF' }, { k: 'pct', t: '% apurado', f: f1 }, { k: 'abst_apurada', t: 'abst. apurada', f: v => v == null ? '—' : f1(v) + '%' },
+      { k: 'uf', t: 'UF', f: v => v === 'ZZ' ? 'ZZ (exterior)' : v }, { k: 'pct', t: '% apurado', f: f1 }, { k: 'abst_apurada', t: 'abst. apurada', f: v => v == null ? '—' : f1(v) + '%' },
       { k: 'abst_t1', t: '1º turno 2026 (mesmos lugares)', f: v => f1(v) + '%' }, { k: 'abst_t2_2022', t: '2022 (mesmos lugares)', f: v => f1(v) + '%' },
       { k: 'delta_t1', t: 'Δ vs 1º turno', f: v => v == null ? '—' : fs(v) + ' pt', cls }, { k: 'ef_A', t: 'efeito A', f: v => v == null ? '—' : fs(v), cls }, { k: 'ef_B', t: 'efeito B', f: v => v == null ? '—' : fs(v), cls },
     ];
@@ -273,7 +273,7 @@
     if (!uf) {
       for (const [u, v] of Object.entries(s.ufs)) {
         const [pct, ape, apd, pre, prd, , , ale, ald] = v;
-        rows.push({ nome: u, aptos: null, pct, ap_e: ape, ap_d: apd, pr_e: pre, pr_d: prd, al_e: ale, al_d: ald, fa_e: ale == null ? null : ale - pre, fa_d: ald == null ? null : ald - prd });
+        rows.push({ nome: u === 'ZZ' ? 'ZZ (exterior)' : u, aptos: null, pct, ap_e: ape, ap_d: apd, pr_e: pre, pr_d: prd, al_e: ale, al_d: ald, fa_e: ale == null ? null : ale - pre, fa_d: ald == null ? null : ald - prd });
       }
       $('infoSel').textContent = 'Brasil: projetado ' + f2(s.pr.sh_esq) + '% × ' + f2(s.pr.sh_dir) + '% — alvo 50%+1 para os dois';
       $('listaMun').innerHTML = '';
@@ -319,7 +319,7 @@
   }
 
   const ufs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
-  $('selUf').innerHTML += ufs.map(u => `<option>${u}</option>`).join('');
+  $('selUf').innerHTML += ufs.map(u => `<option>${u}</option>`).join('') + '<option value="ZZ">ZZ (exterior)</option>';
   { const q = new URLSearchParams(location.search); if (q.get('n')) $('selN').value = q.get('n'); if (q.get('uf')) $('selUf').value = q.get('uf').toUpperCase(); if (q.get('mun')) $('selMun').value = q.get('mun'); }
   $('selN').onchange = $('selUf').onchange = alvos;
   $('selMun').oninput = () => { clearTimeout(window._tm); window._tm = setTimeout(alvos, 250); };
