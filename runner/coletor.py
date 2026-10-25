@@ -55,6 +55,7 @@ DATA_T1, DATA_T2 = "04/10/2026", "25/10/2026"
 # orcamento de -u por ciclo e por cargo (presidente: todos os municipios ainda abertos)
 ORCAMENTO_U = {"0001": 6000, "0003": 1500, "0005": 1500}
 THREADS = 16
+TIMEOUT_U = 8.0      # segundos; o Akamai tarpita conexoes em excesso -- melhor perder a leitura do que travar o ciclo
 
 
 # ---------------------------------------------------------------- URLs
@@ -294,7 +295,7 @@ class Coletor:
     def _busca(self, urls: list[str]) -> list[tuple[str, int, object]]:
         def um(u):
             try:
-                st, j = get_json(u, timeout=15, tentativas=2)
+                st, j = get_json(u, timeout=TIMEOUT_U, tentativas=1)
             except Exception:       # inclui MemoryError: uma url perdida nao derruba a noite
                 return u, 0, None
             return u, st, j
