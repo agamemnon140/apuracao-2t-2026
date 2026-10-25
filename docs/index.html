@@ -68,6 +68,13 @@
     Needle B ancora no <b>2º turno de 2022 andado pela demografia</b> (âncora do projeto apuracao-2026, reconstruída do repositório: 8 covariáveis de perfil, ordem de chegada de 04/10/2026).
     σ <b>medido em replays</b>, não assumido: o do needle B no replay do 1º turno de 2026 (ordem real de chegada de 04/10, só feed municipal: erro de 1,7 pt com 1% apurado, 0,9 com 3%, ≤0,4 de 5% em diante); o do needle A num replay análogo de 2022 (âncora = 1º turno de 2022, verdade = 2º turno de 2022, mesma ordem de chegada como proxy: erro de 0,7 pt com 0,5% apurado, ≤0,2 de 1% em diante). Nos dois: |erro| × 1,25 e piso de 0,5 pt. Uma noite cada — não é a calibração do projeto original. P(vitória) = Φ(|margem|/σ).</div>
 
+  <h2>Mesmas seções: municípios já fechados <span class="sub" id="parBr"></span></h2>
+  <div class="sub">Sem modelo: municípios com 100% das seções totalizadas, comparados com <b>as mesmas seções</b> no 1º turno de 2026 e no 2º turno de 2022 (Lula, % dos votos nos dois). Swing positivo = Lula cresceu ali. É a única comparação urna-a-urna exata disponível sem os boletins; a linha "≥ 50%" é aproximada (seções parciais).</div>
+  <div class="ctl"><label>Mostrar <select id="selPar"><option value="fechados">só 100% apurados</option><option value="meio">entre 50% e 100% (aproximado)</option></select></label></div>
+  <div class="scroll" style="max-height:300px"><table class="t" id="tParUf"></table></div>
+  <h3 style="font-size:14px;margin:14px 0 6px">Maiores municípios do grupo</h3>
+  <div class="scroll" style="max-height:360px"><table class="t" id="tParMun"></table></div>
+
   <h2>Evolução no tempo</h2>
   <div class="charts">
     <div class="chart"><h4>P(Lula vence)</h4><div class="leg"><i style="border-color:var(--a)"></i>A: vs 1º turno<i style="border-color:var(--b)"></i>B: vs 2022+demografia</div><div id="g1"></div></div>
@@ -112,7 +119,7 @@
   const cls = x => x == null ? '' : (x > 0 ? 'pos' : (x < 0 ? 'neg' : ''));
   const hhmm = ms => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 
-  const D = { A: null, B: null, hist: [], abst: null, nomes: {}, ufjson: {}, todas: null };
+  const D = { A: null, B: null, hist: [], abst: null, nomes: {}, ufjson: {}, todas: null, par: null };
   const PASTA = { A: 'dados/live_t1', B: 'dados/live' };
 
   async function j(url) {
@@ -340,6 +347,28 @@
       <div class="nota">Viés positivo: o que já entrou é mais Lula que a cidade — a tela desta cidade tende a cair para ele conforme o resto chega; o needle já desconta isso ao projetar.</div></div>`;
   }
 
+  function pareado() {
+    const pa = D.par, g = $('selPar').value;
+    if (!pa || !pa[g]) { $('parBr').textContent = ''; return; }
+    const br = pa[g].br;
+    $('parBr').textContent = !br ? '— nenhum município nesse grupo ainda'
+      : `${fn(br.n)} municípios · ${fn(br.aptos)} aptos (${f1(100 * br.aptos / 158745502)}% do país) · Lula ${f2(br.sh)}% a dois vs ${f2(br.sh_t1)}% nas mesmas seções no 1º turno → swing ${fs(br.swing_t1)} pt` +
+        (br.swing_t22 == null ? '' : ` · vs 2022: ${fs(br.swing_t22)} pt`) + (br.d_abst == null ? '' : ` · abstenção ${fs(br.d_abst)} pt vs 1º turno`);
+    const cols = [
+      { k: 'uf', t: 'UF' }, { k: 'n', t: 'municípios', f: fn }, { k: 'aptos', t: 'aptos', f: fn }, { k: 'sh', t: 'Lula agora', f: v => f1(v) + '%' },
+      { k: 'sh_t1', t: 'Lula 1º turno (mesmas seções)', f: v => f1(v) + '%' }, { k: 'swing_t1', t: 'swing vs 1º turno', f: v => fs(v) + ' pt', cls },
+      { k: 'swing_t22', t: 'swing vs 2022', f: v => v == null ? '—' : fs(v) + ' pt', cls }, { k: 'd_abst', t: 'Δ abstenção', f: v => v == null ? '—' : fs(v) + ' pt', cls },
+    ];
+    tabela($('tParUf'), cols, Object.entries(pa[g].uf).map(([u, v]) => ({ uf: u, ...v })), 'aptos');
+    const colsM = [
+      { k: 'nome', t: 'município', f: (v, r) => `<span class="nome">${v}</span> <span class="sub">${r.uf}</span>` }, { k: 'aptos', t: 'aptos', f: fn }, { k: 'pct', t: '% apur.', f: f1 },
+      { k: 'sh', t: 'Lula agora', f: v => f1(v) + '%' }, { k: 'sh_t1', t: '1º turno', f: v => f1(v) + '%' }, { k: 'swing_t1', t: 'swing', f: v => fs(v) + ' pt', cls },
+      { k: 'sh_t22', t: '2022', f: v => v == null ? '—' : f1(v) + '%' }, { k: 'swing_t22', t: 'swing vs 2022', f: v => v == null ? '—' : fs(v) + ' pt', cls },
+      { k: 'abst', t: 'abst.', f: v => v == null ? '—' : f1(v) + '%' }, { k: 'd_abst', t: 'Δ abst.', f: v => v == null ? '—' : fs(v) + ' pt', cls },
+    ];
+    tabela($('tParMun'), colsM, pa[g].maiores.slice(), 'aptos');
+  }
+
   function render() {
     const s = D.B || D.A;
     if (s) {
@@ -349,12 +378,12 @@
         (tb ? `<br><b>TSE oficial ${tb.hora || ''}:</b> ${f2(tb.pct)}% das seções · tela <span class="esqc">${f2(tb.sh_esq)}%</span> × <span class="dirc">${f2(tb.sh_dir)}%</span> (${fn(tb.val)} válidos, comparecimento ${tb.ea ? f1(100 * tb.c / tb.ea) + '%' : '—'})` : '');
     }
     card('A', D.A); card('B', D.B);
-    graficos(); abstencao(); alvos();
+    pareado(); graficos(); abstencao(); alvos();
   }
 
   async function carrega() {
     const erros = [];
-    for (const [k, url] of [['A', PASTA.A + '/br.json'], ['B', PASTA.B + '/br.json'], ['hist', 'dados/live/historico.json'], ['abst', 'dados/live/abstencao.json']]) {
+    for (const [k, url] of [['A', PASTA.A + '/br.json'], ['B', PASTA.B + '/br.json'], ['hist', 'dados/live/historico.json'], ['abst', 'dados/live/abstencao.json'], ['par', 'dados/live/pareado.json']]) {
       try { D[k] = await j(url); } catch (e) { erros.push(k); }
     }
     if (erros.length) $('rodape').innerHTML += ` <span class="erro">(sem resposta: ${erros.join(', ')})</span>`;
@@ -379,6 +408,7 @@
   };
   $('selMun').oninput = () => { clearTimeout(window._tm); window._tm = setTimeout(alvos, 250); };
   $('soApur').onchange = abstencao;
+  $('selPar').onchange = pareado;
   window.addEventListener('resize', () => { clearTimeout(window._tr); window._tr = setTimeout(graficos, 200); });
   carrega();
   setInterval(carrega, 60000);
