@@ -78,6 +78,7 @@ def main() -> int:
     calib = {"nota": ("sigma MEDIDO no replay do 1o turno de 2026 (ordem real de chegada, feed municipal, sem "
                       "boletins), ancora 2022+demografia: |erro| x 1,25, piso 0,5, envoltoria monotona. "
                       "Uma noite so; needle A usa o mesmo com fator."),
+             "rotulo": "medido no replay do 1º turno de 2026 (ordem real de 04/10, feed municipal)",
              "medido_em": pd.Timestamp.now().isoformat(timespec="seconds"),
              "pct": pct, "sigma_br": [round(float(x), 3) for x in sigma_br],
              "sigma_uf": [round(float(3 * x), 3) for x in sigma_br],

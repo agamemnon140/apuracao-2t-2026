@@ -1,0 +1,140 @@
+{
+ "nota": "sigma MEDIDO no replay do 1o turno de 2026 (ordem real de chegada, feed municipal, sem boletins), ancora 2022+demografia: |erro| x 1,25, piso 0,5, envoltoria monotona. Uma noite so; needle A usa o mesmo com fator.",
+ "medido_em": "2026-10-25T16:11:26",
+ "pct": [
+  0.0,
+  0.5,
+  1.0,
+  2.0,
+  3.0,
+  5.0,
+  10.0,
+  20.0,
+  30.0,
+  50.0,
+  70.0,
+  90.0,
+  100.0
+ ],
+ "sigma_br": [
+  6.0,
+  2.347,
+  1.783,
+  1.338,
+  1.155,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.5,
+  0.1
+ ],
+ "sigma_uf": [
+  18.0,
+  7.041,
+  5.35,
+  4.014,
+  3.466,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  1.5,
+  0.3
+ ],
+ "replay": [
+  {
+   "pct": 0.5,
+   "hora": "17:20",
+   "tela": -6.991,
+   "needle": -0.145,
+   "erro": 1.878,
+   "erro_tela": -4.968
+  },
+  {
+   "pct": 1.0,
+   "hora": "17:20",
+   "tela": -7.313,
+   "needle": -0.596,
+   "erro": 1.427,
+   "erro_tela": -5.29
+  },
+  {
+   "pct": 2.0,
+   "hora": "17:28",
+   "tela": -7.949,
+   "needle": -0.952,
+   "erro": 1.071,
+   "erro_tela": -5.926
+  },
+  {
+   "pct": 3.0,
+   "hora": "17:33",
+   "tela": -8.928,
+   "needle": -1.099,
+   "erro": 0.924,
+   "erro_tela": -6.905
+  },
+  {
+   "pct": 5.0,
+   "hora": "17:40",
+   "tela": -9.943,
+   "needle": -1.687,
+   "erro": 0.336,
+   "erro_tela": -7.92
+  },
+  {
+   "pct": 10.0,
+   "hora": "17:53",
+   "tela": -11.083,
+   "needle": -1.763,
+   "erro": 0.26,
+   "erro_tela": -9.06
+  },
+  {
+   "pct": 20.0,
+   "hora": "18:14",
+   "tela": -11.257,
+   "needle": -2.049,
+   "erro": -0.026,
+   "erro_tela": -9.234
+  },
+  {
+   "pct": 30.0,
+   "hora": "18:25",
+   "tela": -10.517,
+   "needle": -2.083,
+   "erro": -0.06,
+   "erro_tela": -8.494
+  },
+  {
+   "pct": 50.0,
+   "hora": "18:46",
+   "tela": -9.208,
+   "needle": -1.938,
+   "erro": 0.085,
+   "erro_tela": -7.185
+  },
+  {
+   "pct": 70.0,
+   "hora": "19:12",
+   "tela": -7.412,
+   "needle": -1.806,
+   "erro": 0.217,
+   "erro_tela": -5.389
+  },
+  {
+   "pct": 90.0,
+   "hora": "20:16",
+   "tela": -4.475,
+   "needle": -1.81,
+   "erro": 0.213,
+   "erro_tela": -2.452
+  }
+ ],
+ "rotulo": "medido no replay do 1º turno de 2026 (ordem real de 04/10, feed municipal)"
+}
