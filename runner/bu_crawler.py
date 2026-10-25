@@ -255,6 +255,7 @@ def observadas(nd, nr_esq: str, nr_dir: str, db: Path = DB) -> dict | None:
 
 
 def main() -> int:
+    global N_MAX, N_INI
     ap = argparse.ArgumentParser()
     ap.add_argument("--ambiente", default="oficial")
     ap.add_argument("--ciclo"); ap.add_argument("--pleito")
@@ -264,7 +265,10 @@ def main() -> int:
     ap.add_argument("--db", default=str(DB))
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--turno", default="1")
+    ap.add_argument("--teto", type=int, default=N_MAX, help="concorrencia maxima (divide o IP com o coletor do feed)")
     a = ap.parse_args()
+    N_MAX = max(N_MIN, a.teto)
+    N_INI = min(N_INI, N_MAX)
     if a.status:
         mostra_status(conecta(Path(a.db)))
         return 0
