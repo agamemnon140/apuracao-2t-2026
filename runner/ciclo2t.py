@@ -391,6 +391,81 @@ class Abstencao:
                 "ufs": ufs, "sentinelas": sentinelas, "desvios": desvios}
 
 
+class Pareado:
+    """Comparacao SEM modelo, nas mesmas secoes: municipios ja 100% apurados (e, separado, os com
+    >= 50%) contra o voto dessas mesmas secoes no 1o turno de 2026 e no 2o turno de 2022."""
+
+    def __init__(self):
+        meta = json.loads((DOCS / "meta.json").read_text("utf-8"))
+        ordem = [x[0] for x in meta["pr"]["r26"]["t1"]]
+        i13, i22, n26 = ordem.index("13"), ordem.index("22"), len(ordem)
+        self.ref = {}
+        for uf in UFS + ["ZZ"]:
+            f = DOCS / "uf" / f"{uf}.json"
+            if not f.exists():
+                continue
+            u = json.loads(f.read_text("utf-8"))
+            for cd, m in u["mun"].items():
+                p26, p22 = m.get("pr26t1"), m.get("pr22t2")
+                if not p26:
+                    continue
+                self.ref[int(cd)] = {"uf": uf, "nome": m.get("nome", ""), "aptos": m.get("aptos26") or 0,
+                                     "t1_esq": p26[i13], "t1_dir": p26[i22], "t1_abst": p26[n26 + 2],
+                                     "t22_esq": p22[0] if p22 else None, "t22_dir": p22[1] if p22 else None}
+
+    def monta(self, leituras: list[dict], nr_esq: str, nr_dir: str, instante: pd.Timestamp) -> dict:
+        grupos = {"fechados": [], "meio": []}
+        for l in leituras:
+            if l.get("nivel") != "mu" or not l.get("ts") or not l.get("cand"):
+                continue
+            r = self.ref.get(int(l["cd_mun"]))
+            if not r or not (r["t1_esq"] + r["t1_dir"]):
+                continue
+            frac = l["st"] / l["ts"]
+            if frac < 0.5:
+                continue
+            esq, dir_ = l["cand"].get(nr_esq, 0), l["cand"].get(nr_dir, 0)
+            if esq + dir_ <= 0:
+                continue
+            sh = 100 * esq / (esq + dir_)
+            sh1 = 100 * r["t1_esq"] / (r["t1_esq"] + r["t1_dir"])
+            sh22 = (100 * r["t22_esq"] / (r["t22_esq"] + r["t22_dir"])
+                    if r["t22_esq"] is not None and (r["t22_esq"] + r["t22_dir"]) else None)
+            ab = 100 * (1 - (l["c"] or 0) / l["ea"]) if l.get("ea") else None
+            ab1 = 100 * r["t1_abst"] / r["aptos"] if r["aptos"] else None
+            item = {"cd": int(l["cd_mun"]), "uf": r["uf"], "nome": r["nome"], "aptos": r["aptos"],
+                    "pct": round(100 * frac, 1), "dois": esq + dir_, "sh": round(sh, 2), "sh_t1": round(sh1, 2),
+                    "swing_t1": round(sh - sh1, 2), "sh_t22": None if sh22 is None else round(sh22, 2),
+                    "swing_t22": None if sh22 is None else round(sh - sh22, 2),
+                    "abst": None if ab is None else round(ab, 2), "abst_t1": None if ab1 is None else round(ab1, 2),
+                    "d_abst": None if ab is None or ab1 is None else round(ab - ab1, 2)}
+            grupos["fechados" if frac >= 0.999 else "meio"].append(item)
+
+        def agrega(itens: list[dict]) -> dict | None:
+            if not itens:
+                return None
+            w = sum(i["dois"] for i in itens)
+            sw1 = sum(i["dois"] * i["swing_t1"] for i in itens) / w
+            c22 = [i for i in itens if i["swing_t22"] is not None]
+            w22 = sum(i["dois"] for i in c22)
+            sw22 = sum(i["dois"] * i["swing_t22"] for i in c22) / w22 if w22 else None
+            ca = [i for i in itens if i["d_abst"] is not None]
+            wa = sum(i["aptos"] for i in ca)
+            da = sum(i["aptos"] * i["d_abst"] for i in ca) / wa if wa else None
+            sh = sum(i["dois"] * i["sh"] for i in itens) / w
+            return {"n": len(itens), "aptos": sum(i["aptos"] for i in itens), "dois": w, "sh": round(sh, 2),
+                    "sh_t1": round(sh - sw1, 2), "swing_t1": round(sw1, 2),
+                    "swing_t22": None if sw22 is None else round(sw22, 2),
+                    "d_abst": None if da is None else round(da, 2)}
+
+        out = {"instante": instante.strftime("%H:%M:%S")}
+        for g, itens in grupos.items():
+            out[g] = {"br": agrega(itens),
+                      "uf": {u: agrega([i for i in itens if i["uf"] == u]) for u in sorted({i["uf"] for i in itens})},
+                      "maiores": sorted(itens, key=lambda i: -i["aptos"])[:60]}
+        return out
+
+
 class Publicador:
     def __init__(self, modo: str):
         self.modo, self.ultimo = modo, 0.0
@@ -449,6 +524,7 @@ def main() -> int:
     logging.info("needles prontos: %d urnas, %.0f s", ctxs["A"].nd.n, time.time() - t0)
     fonte = FeedSimulado(a.simula_frac) if a.modo == "simula" else Feed2T(ctxs["B"], a.sem_feed, a.threads, a.orcamento)
     abst = Abstencao(ctxs)
+    pareado = Pareado()
     pub = Publicador(a.publicar)
     params = Params()
     arq_hist = DOCS / "live" / "historico.json"
@@ -477,6 +553,13 @@ def main() -> int:
             leituras = fonte.leituras()
             ab = abst.monta(leituras, rs, instante)
             grava(DOCS / "live" / "abstencao.json", ab)
+            pa = pareado.monta(leituras, ctxs["B"].nomes["nr_esq"], ctxs["B"].nomes["nr_dir"], instante)
+            grava(DOCS / "live" / "pareado.json", pa)
+            fb = pa.get("fechados", {}).get("br")
+            if fb:
+                logging.info("pareado: %d municipios fechados (%s aptos): Lula %.2f%% a dois vs %.2f%% no 1T (swing %+.2f), "
+                             "vs 2022 %s, abstencao %s", fb["n"], f"{fb['aptos']:,}", fb["sh"], fb["sh_t1"], fb["swing_t1"],
+                             fb["swing_t22"], fb["d_abst"])
             comp = (ab["br"]["c"] / ab["br"]["ea"]) if ab["br"]["ea"] else None
             hist.append(ponto_historico(saidas, instante, comp))
             grava(arq_hist, hist)
