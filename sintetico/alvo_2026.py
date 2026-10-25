@@ -1,6 +1,6 @@
 """Alvo de vitoria: quanto cada candidato precisa em cada lugar para fazer 50%+1 dos VALIDOS.
 
-Parte da ancora por urna (sintetico/ancora_2026.py). Por urna:
+Parte da ancora por urna (sintetico/ancora_2026.py ou sintetico/ancora_repo.py). Por urna:
 
   val_i  = aptos_i * sigma(a_part_i)          validos esperados (a ancora vem do 2o turno,
                                               onde validos = os dois campos)
@@ -17,11 +17,12 @@ ganho de 3 pontos num reduto de 80% nao e o mesmo esforco que 3 pontos num lugar
 No 2o turno nao ha terceiros (out = 0) e a conta vira a classica dois-a-dois.
 
 Saidas (SAIDA = eleicoes-dados/sintetico):
-  alvo_2026_t{1,2}.parquet  chave da urna, v_esp (validos), ancora_esq/_dir e alvo_esq/_dir
-                            (fatias dos VALIDOS da propria urna), sh_out
-  alvo_2026_t{1,2}.json     deltas, agregados por BR, UF e municipio
+  alvo_{sufixo}_t{1,2}.parquet  chave da urna, v_esp (validos), ancora_esq/_dir e alvo_esq/_dir
+                                (fatias dos VALIDOS da propria urna), sh_out
+  alvo_{sufixo}_t{1,2}.json     deltas, agregados por BR, UF e municipio
 
 Uso:  .venv/Scripts/python -m sintetico.alvo_2026 [--turno 2] [--calib]
+                                                  [--ancora ancora_t1_2026.parquet --sufixo t1_2026]
 """
 from __future__ import annotations
 
@@ -60,11 +61,18 @@ def agrega(df: pd.DataFrame, por: list[str]) -> pd.DataFrame:
     return out
 
 
+def _arg(nome: str, padrao: str | None) -> str | None:
+    if nome in sys.argv:
+        return sys.argv[sys.argv.index(nome) + 1]
+    return padrao
+
+
 def main() -> int:
-    turno = 2 if "--turno" in sys.argv and sys.argv[sys.argv.index("--turno") + 1] == "2" else 1
+    turno = 2 if _arg("--turno", "1") == "2" else 1
     calib = "--calib" in sys.argv
-    anc = pd.read_parquet(SAIDA / ("ancora_2022_calib.parquet" if calib else "ancora_2026.parquet"),
-                          columns=CHAVE + ["nr_local", "aptos", "a_ed", "a_part", "a_out"])
+    arq_anc = _arg("--ancora", "ancora_2022_calib.parquet" if calib else "ancora_2026.parquet")
+    sufixo = _arg("--sufixo", "2022_calib" if calib else "2026")
+    anc = pd.read_parquet(SAIDA / arq_anc, columns=CHAVE + ["nr_local", "aptos", "a_ed", "a_part", "a_out"])
     a = anc["a_ed"].to_numpy(float)
     val = anc["aptos"].to_numpy(float) * sig(anc["a_part"])
     po = np.clip(sig(anc["a_out"]), 0.0, 0.85) if turno == 1 else np.zeros(len(anc))
@@ -87,7 +95,7 @@ def main() -> int:
     br_out = float(out.sum() / val.sum())
     res_e = float((val * df["alvo_esq"]).sum() / val.sum()) - meta
     res_d = float((val * df["alvo_dir"]).sum() / val.sum()) - meta
-    print(f"turno {turno}{' (calib 2022)' if calib else ''}: validos esperados {val.sum():,.0f} "
+    print(f"ancora {arq_anc}, turno {turno}{' (calib 2022)' if calib else ''}: validos esperados {val.sum():,.0f} "
           f"(terceiros {100 * br_out:.2f}%)")
     print(f"ancora (% dos validos): esquerda {100 * br_ae:.2f}  direita {100 * br_ad:.2f}")
     print(f"faltam para 50%+1: esquerda {100 * (meta - br_ae):+.2f} pontos  "
@@ -99,9 +107,9 @@ def main() -> int:
     print("\nalvo por UF (fatia dos validos, %):")
     print((100 * uf[["ancora_esq", "alvo_esq", "ancora_dir", "alvo_dir"]]).round(1).T.to_string())
 
-    suf = "2022_calib" if calib else f"2026_t{turno}"
+    suf = f"{sufixo}_t{turno}" if not calib else "2022_calib"
     df.to_parquet(SAIDA / f"alvo_{suf}.parquet", index=False)
-    j = {"turno": turno, "meta": meta, "delta_esq": d_esq, "delta_dir": d_dir,
+    j = {"turno": turno, "ancora": arq_anc, "meta": meta, "delta_esq": d_esq, "delta_dir": d_dir,
          "br": {"aptos": int(df["aptos"].sum()), "v_esp": round(float(val.sum())),
                 "ancora_esq": br_ae, "ancora_dir": br_ad, "ancora_out": br_out,
                 "alvo_esq": meta, "alvo_dir": meta},
