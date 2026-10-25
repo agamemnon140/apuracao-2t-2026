@@ -1,17 +1,9 @@
 name: Checa fontes do TSE
 
-# Mantém a aba "Dados e fontes" honesta todo dia e, na semana da eleição, de hora em hora
-# (para ver quando a eleição de 2026 entra no índice do TSE). Só atualiza o bloco de status
-# do live.json. NAS NOITES DE APURAÇÃO o workflow fica quieto: o runner local
-# (runner/ciclo.py) é o único a escrever live.json e checa as fontes ele mesmo -- dois
-# escritores no mesmo arquivo rejeitariam os pushes um do outro.
+# No apuracao-2t-2026 o cron fica DESLIGADO: na noite de 25/10 o runner local
+# (runner/ciclo2t.py) e o unico escritor de docs/dados/live*. Dois escritores no mesmo
+# arquivo rejeitariam os pushes um do outro. Disparo manual continua disponivel.
 on:
-  schedule:
-    - cron: "0 12 * * *"            # diário, 09:00 BRT
-    - cron: "0 * 1-3 10 *"          # 01-03/10: de hora em hora
-    - cron: "0 10-18 4 10 *"        # 04/10: 07h-15h BRT, antes do runner assumir
-    - cron: "0 * 22-24 10 *"        # 22-24/10: de hora em hora
-    - cron: "0 10-18 25 10 *"       # 25/10: 07h-15h BRT
   workflow_dispatch:
 
 permissions:

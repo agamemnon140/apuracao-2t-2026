@@ -256,7 +256,7 @@ class Needle:
             l_ = (np.bincount(loco[lo], (w * r)[lo], self.n_loc)
                   / (np.bincount(loco[lo], w[lo], self.n_loc) + p.K_LOC))
         dev = self.X @ beta + u[self.uf_cod] + m[self.mun_cod] + l_[self.loc_cod]
-        return dev, {"beta0": float(beta[0]), "u": u}
+        return dev, {"beta0": float(beta[0]), "u": u, "m": m}
 
     def _agrega(self, dev, crawl, pc, R, st, ts, tem_st, tot, coef) -> dict:
         pr = self._proj(dev)
@@ -293,7 +293,7 @@ class Needle:
         uf = {u: resumo(g) for u, g in dfm.groupby("uf")}
         br["delta_equiv"] = self.delta_equiv(br["dois_esq"])
         return {"br": br, "uf": uf, "mun": dfm, "dev": dev, "falta": falta,
-                "coef": {k: {"beta0": v["beta0"]} for k, v in coef.items()}}
+                "coef": {k: {"beta0": v["beta0"], "u": v["u"], "m": v["m"]} for k, v in coef.items()}}
 
     def delta_equiv(self, alvo_dois: float) -> float:
         """Swing uniforme (log-odds) que leva a ancora inteira ao dois-a-dois projetado."""
