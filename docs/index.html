@@ -71,8 +71,8 @@
   <h2>Evolução no tempo</h2>
   <div class="charts">
     <div class="chart"><h4>P(Lula vence)</h4><div class="leg"><i style="border-color:var(--a)"></i>A: vs 1º turno<i style="border-color:var(--b)"></i>B: vs 2022+demografia</div><div id="g1"></div></div>
-    <div class="chart"><h4>% final projetado — Lula (válidos)</h4><div class="leg"><i style="border-color:var(--a)"></i>A<i style="border-color:var(--b)"></i>B<i style="border-color:var(--tela)" class="tr"></i>tela crua (apurado)</div><div id="g2"></div></div>
-    <div class="chart"><h4>% final projetado — Lula × % apurado</h4><div class="leg"><i style="border-color:var(--a)"></i>A<i style="border-color:var(--b)"></i>B<i style="border-color:var(--tela)" class="tr"></i>tela crua</div><div id="g3"></div></div>
+    <div class="chart"><h4>% final projetado — Lula (válidos), faixa 95%</h4><div class="leg"><i style="border-color:var(--a)"></i>A<i style="border-color:var(--b)"></i>B<i style="border-color:var(--tela)" class="tr"></i>tela oficial do TSE</div><div id="g2"></div></div>
+    <div class="chart"><h4>% final projetado — Lula × % apurado (TSE), faixa 95%</h4><div class="leg"><i style="border-color:var(--a)"></i>A<i style="border-color:var(--b)"></i>B<i style="border-color:var(--tela)" class="tr"></i>tela oficial do TSE</div><div id="g3"></div></div>
     <div class="chart"><h4>Comparecimento apurado × esperado</h4><div class="leg"><i style="border-color:#1e8449"></i>apurado (seções totalizadas)<i style="border-color:var(--a)" class="tr"></i>1º turno 2026 (final)<i style="border-color:var(--b)" class="tr"></i>2º turno 2022 (final)</div><div id="g4"></div></div>
   </div>
 
@@ -146,6 +146,8 @@
         <div>Margem <b>${fs(pr.margem)}</b> ± σ ${f2(pr.sigma)} <span class="sub">(${pr.lider})</span></div>
         <div>Tela crua: ${telaE == null ? '—' : f2(telaE) + '% × ' + f2(100 - telaE) + '%'}</div>
         <div>Comparecimento projetado: ${f1(pr.comparecimento)}%</div>
+        <div><b>Faixa 95%</b> ${n.esq}: ${f1(pr.sh_esq - 0.98 * pr.sigma)}–${f1(pr.sh_esq + 0.98 * pr.sigma)}%</div>
+        <div><b>Faixa 95%</b> ${n.dir}: ${f1(pr.sh_dir - 0.98 * pr.sigma)}–${f1(pr.sh_dir + 0.98 * pr.sigma)}%</div>
       </div>
       <div class="alvo"><table>
         <tr><th>votos necessários</th><th>âncora</th><th>projetado</th><th>alvo</th><th>falta</th></tr>
@@ -197,17 +199,19 @@
       { cor: '#d35400', pts: h.map(p => [tms(p), 100 * (p.A ? p.A.p_esq : NaN)]) },
       { cor: '#7d3c98', pts: h.map(p => [tms(p), 100 * (p.B ? p.B.p_esq : NaN)]) },
     ], { ...xo, ymin: 0, ymax: 100, ref: 50, yfmt: v => Math.round(v) + '%' });
-    const bA = h.map(p => [tms(p), p.A.sh_esq - p.A.sigma / 2, p.A.sh_esq + p.A.sigma / 2]);
-    const bB = h.map(p => [tms(p), p.B.sh_esq - p.B.sigma / 2, p.B.sh_esq + p.B.sigma / 2]);
+    const bA = h.map(p => [tms(p), p.A.sh_esq - 0.98 * p.A.sigma, p.A.sh_esq + 0.98 * p.A.sigma]);
+    const bB = h.map(p => [tms(p), p.B.sh_esq - 0.98 * p.B.sigma, p.B.sh_esq + 0.98 * p.B.sigma]);
+    const telaTse = p => p.tse_esq == null ? telaE(p) : p.tse_esq;
+    const pctX = p => p.tse_pct == null ? p.pct : p.tse_pct;
     chart($('g2'), [
       { cor: '#d35400', pts: h.map(p => [tms(p), p.A.sh_esq]), banda: bA },
       { cor: '#7d3c98', pts: h.map(p => [tms(p), p.B.sh_esq]), banda: bB },
-      { cor: '#7f8c8d', tracejado: true, pts: h.map(p => [tms(p), telaE(p)]) },
+      { cor: '#7f8c8d', tracejado: true, pts: h.map(p => [tms(p), telaTse(p)]) },
     ], { ...xo, ref: 50, ycentro: 50, yfmt: v => f1(v) + '%' });
     chart($('g3'), [
-      { cor: '#d35400', pts: h.map(p => [p.pct, p.A.sh_esq]) },
-      { cor: '#7d3c98', pts: h.map(p => [p.pct, p.B.sh_esq]) },
-      { cor: '#7f8c8d', tracejado: true, pts: h.map(p => [p.pct, telaE(p)]) },
+      { cor: '#d35400', pts: h.map(p => [pctX(p), p.A.sh_esq]), banda: h.map(p => [pctX(p), p.A.sh_esq - 0.98 * p.A.sigma, p.A.sh_esq + 0.98 * p.A.sigma]) },
+      { cor: '#7d3c98', pts: h.map(p => [pctX(p), p.B.sh_esq]), banda: h.map(p => [pctX(p), p.B.sh_esq - 0.98 * p.B.sigma, p.B.sh_esq + 0.98 * p.B.sigma]) },
+      { cor: '#7f8c8d', tracejado: true, pts: h.map(p => [pctX(p), telaTse(p)]) },
     ], { xfmt: v => f1(v) + '%', xmin: 0, xmax: 100, ref: 50, ycentro: 50, yfmt: v => f1(v) + '%' });
     const ab = D.abst && D.abst.br;
     chart($('g4'), [
@@ -340,7 +344,9 @@
     const s = D.B || D.A;
     if (s) {
       const badge = $('modo'); badge.textContent = s.modo === 'simula' ? 'simulação (ensaio)' : (s.modo || ''); badge.className = 'badge ' + (s.modo === 'simula' ? 'sim' : 'vivo');
-      $('status').textContent = `${s.pct_secoes.toFixed(2).replace('.', ',')}% das seções totalizadas · ${fn(s.n_bu)} boletins de urna lidos de ${fn(s.n_urnas)} · atualizado ${s.instante} (gerado ${(s.gerado_em || '').replace('T', ' ')}) · recarrega a cada 60 s`;
+      const tb = (s.tse || {}).br;
+      $('status').innerHTML = `${s.pct_secoes.toFixed(2).replace('.', ',')}% das seções na nossa leitura · ${fn(s.n_bu)} boletins de urna lidos de ${fn(s.n_urnas)} · atualizado ${s.instante} · recarrega a cada 60 s` +
+        (tb ? `<br><b>TSE oficial ${tb.hora || ''}:</b> ${f2(tb.pct)}% das seções · tela <span class="esqc">${f2(tb.sh_esq)}%</span> × <span class="dirc">${f2(tb.sh_dir)}%</span> (${fn(tb.val)} válidos, comparecimento ${tb.ea ? f1(100 * tb.c / tb.ea) + '%' : '—'})` : '');
     }
     card('A', D.A); card('B', D.B);
     graficos(); abstencao(); alvos();
