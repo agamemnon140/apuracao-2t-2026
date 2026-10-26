@@ -34,6 +34,23 @@ e a ordem de chegada de 04/10/2026 (`pipeline/carimbos.py 2026`).
 (`probe/replay_t1_2026.py`, `probe/replay_t2_2022.py`; uma noite cada — **não é a calibração do
 projeto original**, que tinha boletins e a ordem de 2022.)
 
+## A noite, como foi (25/10/2026)
+
+- 17h10: primeiro parcial. O crawler de boletins (16–48 conexões) fez o Akamai do TSE "tarpitar" o IP:
+  o caminho dos boletins ficou 100% bloqueado e o feed municipal foi junto — os ciclos 7 e 8 levaram
+  8 min e **1h44** (17h19 → 19h04) e a página ficou parada. Correção às 19h09: coletor com 6 conexões,
+  timeout 8 s sem retentativa e 1.200 `-u` por ciclo (`--threads/--orcamento`); crawler religado às
+  19h21 só com `--teto 2` (408 boletins até 21h40).
+- A apuração do TSE foi lenta: 1,5% às 19h05, 9,4% às 19h37, 17,5% às 19h53, 99,9% às 21h38.
+- **O Windows entrou em suspensão às 19h56 e só voltou às 21h40** (Kernel-Power 42/107): laço, crawler
+  e vigias congelados; buraco no histórico. `powercfg /change standby-timeout-ac 0` aplicado às 21h41.
+- Resultado oficial às 21h38 (99,9%): **Lula 51,77% × Flávio Bolsonaro 48,23%** (margem +3,5 a dois).
+  Às 19h26, com 3,3% apurado, os needles diziam A +4,9 / B +5,9; às 19h39 (9,4%) A +4,5 / B +5,1; o
+  painel pareado de 99 urnas com boletim dava swing +2,8 vs 1º turno (final: +3,2 nos 1.453 municípios
+  fechados). Tela crua às 19h37: +1,0.
+- Lições em `probe/ACHADOS.md` (etapa 2) e no checklist de véspera: suspensão desligada, crawler com teto
+  baixo, vigia de idade do `estado_ciclo.json`, totais oficiais (`{abr}-c0001-e{ele}-u.json`) na tela.
+
 ## Rodar
 
 ```sh
